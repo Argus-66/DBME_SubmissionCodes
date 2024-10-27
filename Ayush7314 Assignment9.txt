@@ -1,0 +1,233 @@
+root@pop-os:/home/argus/Desktop/DBMS_Codes# # Start MongoDB service
+sudo systemctl start mongod
+
+# Verify MongoDB is running
+sudo systemctl status mongod
+● mongod.service - MongoDB Database Server
+     Loaded: loaded (/lib/systemd/system/mongod.service; disabled; vendor preset: enabled)
+     Active: active (running) since Sun 2024-10-27 14:35:37 IST; 19ms ago
+       Docs: https://docs.mongodb.org/manual
+   Main PID: 30204 (mongod)
+     Memory: 1.8M
+        CPU: 3ms
+     CGroup: /system.slice/mongod.service
+             └─30204 /usr/bin/mongod --config /etc/mongod.conf
+
+Oct 27 14:35:37 pop-os systemd[1]: Started MongoDB Database Server.
+root@pop-os:/home/argus/Desktop/DBMS_Codes# mongosh
+Current Mongosh Log ID:	671e02664139370eed838725
+Connecting to:		mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+2.2.15
+Using MongoDB:		6.0.16
+Using Mongosh:		2.2.15
+
+For mongosh info see: https://docs.mongodb.com/mongodb-shell/
+
+
+To help improve our products, anonymous usage data is collected and sent to MongoDB periodically (https://www.mongodb.com/legal/privacy-policy).
+You can opt-out by running the disableTelemetry() command.
+
+------
+   The server generated these startup warnings when booting
+   2024-10-27T14:35:37.203+05:30: Using the XFS filesystem is strongly recommended with the WiredTiger storage engine. See http://dochub.mongodb.org/core/prodnotes-filesystem
+   2024-10-27T14:35:37.350+05:30: Access control is not enabled for the database. Read and write access to data and configuration is unrestricted
+------
+
+test> // Show all databases
+
+test> show dbs
+admin    8.00 KiB
+config  12.00 KiB
+local    8.00 KiB
+test> 
+
+test> // Create/Switch to a new database named 'library_db'
+
+test> use library_db
+switched to db library_db
+library_db> 
+
+library_db> // Show current database
+
+library_db> db
+library_db
+library_db> // Insert one book
+
+library_db> db.books.insertOne({
+...     title: "The Great Gatsby",
+...     author: "F. Scott Fitzgerald",
+...     year: 1925,
+...     copies: 5
+... })
+{
+  acknowledged: true,
+  insertedId: ObjectId('671e027f4139370eed838726')
+}
+library_db> 
+
+library_db> // Verify the insertion by finding all documents
+
+library_db> db.books.find()
+[
+  {
+    _id: ObjectId('671e027f4139370eed838726'),
+    title: 'The Great Gatsby',
+    author: 'F. Scott Fitzgerald',
+    year: 1925,
+    copies: 5
+  }
+]
+library_db> // Find all books (prettier format)
+
+library_db> db.books.find().pretty()
+[
+  {
+    _id: ObjectId('671e027f4139370eed838726'),
+    title: 'The Great Gatsby',
+    author: 'F. Scott Fitzgerald',
+    year: 1925,
+    copies: 5
+  }
+]
+library_db> 
+
+library_db> // Find a specific book by title
+
+library_db> db.books.findOne({ title: "The Great Gatsby" })
+{
+  _id: ObjectId('671e027f4139370eed838726'),
+  title: 'The Great Gatsby',
+  author: 'F. Scott Fitzgerald',
+  year: 1925,
+  copies: 5
+}
+library_db> // Insert multiple books using insertMany()
+
+library_db> db.books.insertMany([
+...     {
+...         title: "1984",
+...         author: "George Orwell",
+...         year: 1949,
+...         copies: 3
+...     },
+...     {
+...         title: "To Kill a Mockingbird",
+...         author: "Harper Lee",
+...         year: 1960,
+...         copies: 4
+...     }
+... ])
+{
+  acknowledged: true,
+  insertedIds: {
+    '0': ObjectId('671e029d4139370eed838727'),
+    '1': ObjectId('671e029d4139370eed838728')
+  }
+}
+library_db> // Find all books published after 1950
+
+library_db> db.books.find({ year: { $gt: 1950 } })
+[
+  {
+    _id: ObjectId('671e029d4139370eed838728'),
+    title: 'To Kill a Mockingbird',
+    author: 'Harper Lee',
+    year: 1960,
+    copies: 4
+  }
+]
+library_db> 
+
+library_db> // Find books with exactly 3 copies
+
+library_db> db.books.find({ copies: 3 })
+[
+  {
+    _id: ObjectId('671e029d4139370eed838727'),
+    title: '1984',
+    author: 'George Orwell',
+    year: 1949,
+    copies: 3
+  }
+]
+library_db> 
+
+library_db> // Find books by a specific author
+
+library_db> db.books.find({ author: "George Orwell" })
+[
+  {
+    _id: ObjectId('671e029d4139370eed838727'),
+    title: '1984',
+    author: 'George Orwell',
+    year: 1949,
+    copies: 3
+  }
+]
+library_db> // Update one book - increase copies by 1
+
+library_db> db.books.updateOne(
+...     { title: "1984" },
+...     { $inc: { copies: 1 } }
+... )
+{
+  acknowledged: true,
+  insertedId: null,
+  matchedCount: 1,
+  modifiedCount: 1,
+  upsertedCount: 0
+}
+library_db> 
+
+library_db> // Update multiple books - add a 'status' field
+
+library_db> db.books.updateMany(
+...     {},  // empty filter means all documents
+...     { $set: { status: "Available" } }
+... )
+{
+  acknowledged: true,
+  insertedId: null,
+  matchedCount: 3,
+  modifiedCount: 3,
+  upsertedCount: 0
+}
+library_db> // Delete one book
+
+library_db> db.books.deleteOne({ title: "The Great Gatsby" })
+{ acknowledged: true, deletedCount: 1 }
+library_db> 
+
+library_db> // Delete multiple books that match a condition
+
+library_db> db.books.deleteMany({ copies: { $lt: 3 } })  // delete books with less than 3 copies
+{ acknowledged: true, deletedCount: 0 }
+library_db> 
+
+library_db> 
+
+library_db> // Count total documents
+
+library_db> db.books.countDocuments()
+2
+library_db> 
+
+library_db> // Show all collections in current database
+
+library_db> show collections
+books
+library_db> 
+
+library_db> // Drop a collection
+
+library_db> db.books.drop()
+true
+library_db> 
+
+library_db> // Drop the entire database
+
+library_db> db.dropDatabase()
+{ ok: 1, dropped: 'library_db' }
+library_db> 
+
+library_db> 
+

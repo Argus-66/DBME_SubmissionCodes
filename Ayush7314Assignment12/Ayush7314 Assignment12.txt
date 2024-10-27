@@ -1,0 +1,11 @@
+argus@pop-os:~$ cd Desktop
+argus@pop-os:~/Desktop$ ls
+DBMS_Codes
+argus@pop-os:~/Desktop$ cd DBMS_Codes
+argus@pop-os:~/Desktop/DBMS_Codes$ ls
+'Ayush7314 Assignment10'  'Ayush7314 Assignment5'   Ayush7314Assignment8.py
+'Ayush7314 Assignment11'  'Ayush7314 Assignment6'  'Ayush7314 Assignment9'
+ Ayush7314Assignment12    'Ayush7314 Assignment7'
+'Ayush7314 Assignment4'   'Ayush7314 Assignment8'
+argus@pop-os:~/Desktop/DBMS_Codes$ cd Ayush7314Assignment12
+argus@pop-os:~/Desktop/DBMS_Codes/Ayush7314Assignment12$

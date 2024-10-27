@@ -1,0 +1,283 @@
+mysql> -- Create the database
+mysql> CREATE DATABASE IF NOT EXISTS library_management;
+Query OK, 1 row affected (0.00 sec)
+
+mysql> USE library_management;
+Database changed
+mysql> 
+mysql> -- Create Borrower table
+mysql> CREATE TABLE Borrower (
+    ->     Roll_no INT,
+    ->     NameofBook VARCHAR(100),
+    ->     DateofIssue DATE,
+    ->     Status CHAR(1),  -- 'I' for Issued, 'R' for Returned
+    ->     PRIMARY KEY (Roll_no, NameofBook)
+    -> );
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> 
+mysql> -- Create Fine table
+mysql> CREATE TABLE Fine (
+    ->     Fine_id INT AUTO_INCREMENT PRIMARY KEY,
+    ->     Roll_no INT,
+    ->     Date DATE,
+    ->     Amt DECIMAL(10,2),
+    ->     FOREIGN KEY (Roll_no) REFERENCES Borrower(Roll_no)
+    -> );
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> 
+mysql> -- Insert sample data into Borrower table
+mysql> INSERT INTO Borrower (Roll_no, NameofBook, DateofIssue, Status) VALUES
+    -> (101, 'Database Management', '2024-09-01', 'I'),
+    -> (102, 'Python Programming', '2024-09-15', 'I'),
+    -> (103, 'Web Development', '2024-10-01', 'I');
+Query OK, 3 rows affected (0.02 sec)
+Records: 3  Duplicates: 0  Warnings: 0
+
+mysql> DELIMITER $$
+mysql> 
+mysql> CREATE PROCEDURE CalculateFine(IN p_roll_no INT, IN p_name_of_book VARCHAR(100))
+    -> BEGIN
+    ->     -- Declare variables
+    ->     DECLARE v_date_of_issue DATE;
+    ->     DECLARE v_current_date DATE DEFAULT CURDATE();
+    ->     DECLARE v_days INT;
+    ->     DECLARE v_fine_amount DECIMAL(10,2) DEFAULT 0.00;
+    ->     
+    ->     -- Define fine rates
+    ->     DECLARE c_fine_per_day_1 DECIMAL(10,2) DEFAULT 5.00;   -- Fine for days 15-30
+    ->     DECLARE c_fine_per_day_2 DECIMAL(10,2) DEFAULT 50.00;  -- Fine after day 30
+    ->     DECLARE c_threshold INT DEFAULT 30;                     -- Threshold for higher fine rate
+    ->     
+    ->     -- Error handler for when no record is found
+    ->     DECLARE CONTINUE HANDLER FOR NOT FOUND
+    ->     SET v_date_of_issue = NULL;
+    -> 
+    ->     -- Get the issue date for the book
+    ->     SELECT DateofIssue
+    ->     INTO v_date_of_issue
+    ->     FROM Borrower
+    ->     WHERE Roll_no = p_roll_no AND NameofBook = p_name_of_book;
+    -> 
+    ->     -- Exit if no record found
+    ->     IF v_date_of_issue IS NULL THEN
+    ->         SELECT 'No record found for the provided Roll No and Book Name.' AS Message;
+    ->         LEAVE proc_exit;
+    ->     END IF;
+    -> 
+    ->     -- Calculate days since book was issued
+    ->     SET v_days = DATEDIFF(v_current_date, v_date_of_issue);
+    -> 
+    ->     -- Calculate fine based on days
+    ->     IF v_days BETWEEN 15 AND c_threshold THEN
+    ->         -- Rs 5 per day between day 15 and 30
+    ->         SET v_fine_amount = v_days * c_fine_per_day_1;
+    ->     ELSEIF v_days > c_threshold THEN
+    ->         -- Rs 5 per day for first 30 days + Rs 50 per day after that
+    ->         SET v_fine_amount = (c_threshold * c_fine_per_day_1) + 
+    ->                            ((v_days - c_threshold) * c_fine_per_day_2);
+    ->     END IF;
+    -> 
+    ->     -- Mark the book as returned
+    ->     UPDATE Borrower
+    ->     SET Status = 'R'
+    ->     WHERE Roll_no = p_roll_no AND NameofBook = p_name_of_book;
+    -> 
+    ->     -- Record the fine if applicable
+    ->     IF v_fine_amount > 0 THEN
+    ->         INSERT INTO Fine (Roll_no, Date, Amt)
+    ->         VALUES (p_roll_no, v_current_date, v_fine_amount);
+    ->         SELECT CONCAT('Fine applied: Rs ', v_fine_amount) AS Message;
+    ->     ELSE
+    ->         SELECT 'No fine applicable. Thank you for returning the book.' AS Message;
+    ->     END IF;
+    -> 
+    ->     -- Save changes
+    ->     COMMIT;
+    -> 
+    ->     proc_exit: -- Exit point for the procedure
+    -> END$$
+ERROR 1308 (42000): LEAVE with no matching label: proc_exit
+mysql> 
+mysql> DELIMITER ;
+mysql> DELIMITER $$
+mysql> 
+mysql> CREATE PROCEDURE CalculateFine(IN p_roll_no INT, IN p_name_of_book VARCHAR(100))
+    -> BEGIN
+    ->     -- Declare variables
+    ->     DECLARE v_date_of_issue DATE;
+    ->     DECLARE v_current_date DATE DEFAULT CURDATE();
+    ->     DECLARE v_days INT;
+    ->     DECLARE v_fine_amount DECIMAL(10,2) DEFAULT 0.00;
+    ->     
+    ->     -- Define fine rates
+    ->     DECLARE c_fine_per_day_1 DECIMAL(10,2) DEFAULT 5.00;   -- Fine for days 15-30
+    ->     DECLARE c_fine_per_day_2 DECIMAL(10,2) DEFAULT 50.00;  -- Fine after day 30
+    ->     DECLARE c_threshold INT DEFAULT 30;                     -- Threshold for higher fine rate
+    ->     
+    ->     -- Error handler for when no record is found
+    ->     DECLARE CONTINUE HANDLER FOR NOT FOUND
+    ->     SET v_date_of_issue = NULL;
+    -> 
+    ->     proc_exit: BEGIN  -- Added label declaration
+    ->         -- Get the issue date for the book
+    ->         SELECT DateofIssue
+    ->         INTO v_date_of_issue
+    ->         FROM Borrower
+    ->         WHERE Roll_no = p_roll_no AND NameofBook = p_name_of_book;
+    -> 
+    ->         -- Exit if no record found
+    ->         IF v_date_of_issue IS NULL THEN
+    ->             SELECT 'No record found for the provided Roll No and Book Name.' AS Message;
+    ->             LEAVE proc_exit;
+    ->         END IF;
+    -> 
+    ->         -- Calculate days since book was issued
+    ->         SET v_days = DATEDIFF(v_current_date, v_date_of_issue);
+    -> 
+    ->         -- Calculate fine based on days
+    ->         IF v_days BETWEEN 15 AND c_threshold THEN
+    ->             -- Rs 5 per day between day 15 and 30
+    ->             SET v_fine_amount = v_days * c_fine_per_day_1;
+    ->         ELSEIF v_days > c_threshold THEN
+    ->             -- Rs 5 per day for first 30 days + Rs 50 per day after that
+    ->             SET v_fine_amount = (c_threshold * c_fine_per_day_1) + 
+    ->                                ((v_days - c_threshold) * c_fine_per_day_2);
+    ->         END IF;
+    -> 
+    ->         -- Mark the book as returned
+    ->         UPDATE Borrower
+    ->         SET Status = 'R'
+    ->         WHERE Roll_no = p_roll_no AND NameofBook = p_name_of_book;
+    -> 
+    ->         -- Record the fine if applicable
+    ->         IF v_fine_amount > 0 THEN
+    ->             INSERT INTO Fine (Roll_no, Date, Amt)
+    ->             VALUES (p_roll_no, v_current_date, v_fine_amount);
+    ->             SELECT CONCAT('Fine applied: Rs ', v_fine_amount) AS Message;
+    ->         ELSE
+    ->             SELECT 'No fine applicable. Thank you for returning the book.' AS Message;
+    ->         END IF;
+    -> 
+    ->         -- Save changes
+    ->         COMMIT;
+    ->     END;  -- End of proc_exit block
+    -> END$$
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> 
+mysql> DELIMITER ;
+mysql> DROP PROCEDURE IF EXISTS CalculateFine;
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> CALL CalculateFine(101, 'Database Management');
+ERROR 1305 (42000): PROCEDURE library_management.CalculateFine does not exist
+mysql> DELIMITER $$
+mysql> 
+mysql> 
+mysql> CREATE PROCEDURE CalculateFine(IN p_roll_no INT, IN p_name_of_book VARCHAR(100))
+    -> BEGIN
+    ->     -- Declare variables
+    ->     DECLARE v_date_of_issue DATE;
+    ->     DECLARE v_current_date DATE DEFAULT CURDATE();
+    ->     DECLARE v_days INT;
+    ->     DECLARE v_fine_amount DECIMAL(10,2) DEFAULT 0.00;
+    ->     
+    ->     -- Define fine rates
+    ->     DECLARE c_fine_per_day_1 DECIMAL(10,2) DEFAULT 5.00;   -- Fine for days 15-30
+    ->     DECLARE c_fine_per_day_2 DECIMAL(10,2) DEFAULT 50.00;  -- Fine after day 30
+    ->     DECLARE c_threshold INT DEFAULT 30;                     -- Threshold for higher fine rate
+    ->     
+    ->     -- Error handler for when no record is found
+    ->     DECLARE CONTINUE HANDLER FOR NOT FOUND
+    ->     SET v_date_of_issue = NULL;
+    -> 
+    ->     proc_exit: BEGIN  
+    ->         -- Get the issue date for the book
+    ->         SELECT DateofIssue
+    ->         INTO v_date_of_issue
+    ->         FROM Borrower
+    ->         WHERE Roll_no = p_roll_no AND NameofBook = p_name_of_book;
+    -> 
+    ->         -- Exit if no record found
+    ->         IF v_date_of_issue IS NULL THEN
+    ->             SELECT 'No record found for the provided Roll No and Book Name.' AS Message;
+    ->             LEAVE proc_exit;
+    ->         END IF;
+    -> 
+    ->         -- Calculate days since book was issued
+    ->         SET v_days = DATEDIFF(v_current_date, v_date_of_issue);
+    -> 
+    ->         -- Calculate fine based on days
+    ->         IF v_days BETWEEN 15 AND c_threshold THEN
+    ->             -- Rs 5 per day between day 15 and 30
+    ->             SET v_fine_amount = v_days * c_fine_per_day_1;
+    ->         ELSEIF v_days > c_threshold THEN
+    ->             -- Rs 5 per day for first 30 days + Rs 50 per day after that
+    ->             SET v_fine_amount = (c_threshold * c_fine_per_day_1) + 
+    ->                                ((v_days - c_threshold) * c_fine_per_day_2);
+    ->         END IF;
+    -> 
+    ->         -- Mark the book as returned
+    ->         UPDATE Borrower
+    ->         SET Status = 'R'
+    ->         WHERE Roll_no = p_roll_no AND NameofBook = p_name_of_book;
+    -> 
+    ->         -- Record the fine if applicable
+    ->         IF v_fine_amount > 0 THEN
+    ->             INSERT INTO Fine (Roll_no, Date, Amt)
+    ->             VALUES (p_roll_no, v_current_date, v_fine_amount);
+    ->             SELECT CONCAT('Fine applied: Rs ', v_fine_amount) AS Message;
+    ->         ELSE
+    ->             SELECT 'No fine applicable. Thank you for returning the book.' AS Message;
+    ->         END IF;
+    -> 
+    ->         -- Save changes
+    ->         COMMIT;
+    ->     END;
+    -> END$$
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> DELIMITER ;
+mysql> CALL CalculateFine(101, 'Database Management');
++--------------------------+
+| Message                  |
++--------------------------+
+| Fine applied: Rs 1450.00 |
++--------------------------+
+1 row in set (0.02 sec)
+
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> -- Check if the procedure exists
+mysql> SHOW PROCEDURE STATUS WHERE Db = 'library_management';
++--------------------+---------------+-----------+----------------+---------------------+---------------------+---------------+---------+----------------------+----------------------+--------------------+
+| Db                 | Name          | Type      | Definer        | Modified            | Created             | Security_type | Comment | character_set_client | collation_connection | Database Collation |
++--------------------+---------------+-----------+----------------+---------------------+---------------------+---------------+---------+----------------------+----------------------+--------------------+
+| library_management | CalculateFine | PROCEDURE | root@localhost | 2024-10-27 13:48:28 | 2024-10-27 13:48:28 | DEFINER       |         | utf8mb4              | utf8mb4_0900_ai_ci   | utf8mb4_0900_ai_ci |
++--------------------+---------------+-----------+----------------+---------------------+---------------------+---------------+---------+----------------------+----------------------+--------------------+
+1 row in set (0.00 sec)
+
+mysql> 
+mysql> -- Check the Borrower table to see if status was updated
+mysql> SELECT * FROM Borrower WHERE Roll_no = 101;
++---------+---------------------+-------------+--------+
+| Roll_no | NameofBook          | DateofIssue | Status |
++---------+---------------------+-------------+--------+
+|     101 | Database Management | 2024-09-01  | R      |
++---------+---------------------+-------------+--------+
+1 row in set (0.00 sec)
+
+mysql> 
+mysql> -- Check the Fine table to see if a fine was recorded
+mysql> SELECT * FROM Fine WHERE Roll_no = 101;
++---------+---------+------------+---------+
+| Fine_id | Roll_no | Date       | Amt     |
++---------+---------+------------+---------+
+|       1 |     101 | 2024-10-27 | 1450.00 |
++---------+---------+------------+---------+
+1 row in set (0.01 sec)
+
+mysql> 
+

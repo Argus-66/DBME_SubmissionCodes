@@ -1,0 +1,80 @@
+mysql> CREATE DATABASE IF NOT EXISTS library_management;
+Query OK, 1 row affected, 1 warning (0.00 sec)
+
+mysql> 
+mysql> -- Use the database
+mysql> USE library_management;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql> 
+mysql> -- Create the Library table
+mysql> CREATE TABLE IF NOT EXISTS Library (
+    ->     book_id INT AUTO_INCREMENT PRIMARY KEY,
+    ->     title VARCHAR(255) NOT NULL,
+    ->     author VARCHAR(255) NOT NULL,
+    ->     isbn VARCHAR(13) NOT NULL,
+    ->     status VARCHAR(50) DEFAULT 'Available',
+    ->     copies_available INT DEFAULT 1
+    -> );
+Query OK, 0 rows affected, 1 warning (0.01 sec)
+
+mysql> CREATE USER 'Ayush'@'localhost' IDENTIFIED BY 'ayush123';
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> GRANT ALL PRIVILEGES ON library_management.* TO 'Ayush'@'localhost';
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> FLUSH PRIVILEGES;
+Query OK, 0 rows affected (0.01 sec)
+
+
+root@pop-os:/home/argus/Desktop/DBMS_Codes# python3 Ayush7314Assignment8.py
+Successfully connected to MySQL database!
+
+=== Library Management System ===
+1. Add Book
+2. Delete Book
+3. Edit Book
+4. Display Books
+5. Exit
+
+Enter your choice (1-5): 1
+
+=== Add New Book ===
+Enter book title: The Great Gatsby
+Enter author name: F. Scott Frizgerald
+Enter ISBN: 9780743273565
+Enter number of copies: 3
+Error: 1364 (HY000): Field 'book_id' doesn't have a default value
+
+=== Library Management System ===
+1. Add Book
+2. Delete Book
+3. Edit Book
+4. Display Books
+5. Exit
+
+Enter your choice (1-5): 4
+
+=== Library Books ===
+
+ID | Title | Author | ISBN | Status | Copies
+------------------------------------------------------------
+1 | The Great Gatsby | F. Scott Fitzgerald | 9780743273565 | Checked Out | 4
+2 | To Kill a Mockingbird | Harper Lee | 9780446310789 | Available | 4
+
+=== Library Management System ===
+1. Add Book
+2. Delete Book
+3. Edit Book
+4. Display Books
+5. Exit
+
+Enter your choice (1-5): 5
+Thank you for using Library Management System!
+MySQL connection closed.
+root@pop-os:/home/argus/Desktop/DBMS_Codes# 
+
+

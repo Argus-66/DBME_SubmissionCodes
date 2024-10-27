@@ -1,0 +1,305 @@
+mysql> -- Create tables with MySQL syntax
+mysql> CREATE TABLE O_RollCall (
+    ->     student_id INT PRIMARY KEY,
+    ->     student_name VARCHAR(50),
+    ->     attendance_date DATE,
+    ->     status VARCHAR(10)
+    -> );
+Query OK, 0 rows affected (0.03 sec)
+
+mysql> 
+mysql> CREATE TABLE N_RollCall (
+    ->     student_id INT PRIMARY KEY,
+    ->     student_name VARCHAR(50),
+    ->     attendance_date DATE,
+    ->     status VARCHAR(10)
+    -> );
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> 
+mysql> -- Insert sample data using MySQL date format
+mysql> INSERT INTO O_RollCall VALUES 
+    -> (1, 'John Doe', STR_TO_DATE('2024-10-27', '%Y-%m-%d'), 'PRESENT'),
+    -> (2, 'Jane Smith', STR_TO_DATE('2024-10-27', '%Y-%m-%d'), 'ABSENT');
+Query OK, 2 rows affected (0.00 sec)
+Records: 2  Duplicates: 0  Warnings: 0
+
+mysql> 
+mysql> INSERT INTO N_RollCall VALUES 
+    -> (3, 'Mike Johnson', STR_TO_DATE('2024-10-27', '%Y-%m-%d'), 'PRESENT'),
+    -> (4, 'Sarah Wilson', STR_TO_DATE('2024-10-27', '%Y-%m-%d'), 'PRESENT'),
+    -> (1, 'John Doe', STR_TO_DATE('2024-10-27', '%Y-%m-%d'), 'PRESENT');
+Query OK, 3 rows affected (0.00 sec)
+Records: 3  Duplicates: 0  Warnings: 0
+
+mysql> 
+mysql> -- MySQL PL/SQL procedure for merging data
+mysql> DELIMITER //
+mysql> 
+mysql> CREATE PROCEDURE MergeRollCall()
+    -> BEGIN
+    ->     -- Declare variables
+    ->     DECLARE done INT DEFAULT FALSE;
+    ->     DECLARE v_student_id INT;
+    ->     DECLARE v_student_name VARCHAR(50);
+    ->     DECLARE v_attendance_date DATE;
+    ->     DECLARE v_status VARCHAR(10);
+    ->     DECLARE v_exists INT;
+    ->     
+    ->     -- Declare cursor
+    ->     DECLARE cur_new_records CURSOR FOR 
+    ->         SELECT student_id, student_name, attendance_date, status 
+    ->         FROM N_RollCall;
+    ->     
+    ->     -- Declare continue handler
+    ->     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+    ->     
+    ->     -- Open cursor
+    ->     OPEN cur_new_records;
+    ->     
+    ->     read_loop: LOOP
+    ->         FETCH cur_new_records INTO v_student_id, v_student_name, v_attendance_date, v_status;
+    ->         
+    ->         IF done THEN
+    ->             LEAVE read_loop;
+    ->         END IF;
+    ->         
+    ->         -- Check if record exists in O_RollCall
+    ->         SELECT COUNT(*) INTO v_exists 
+    ->         FROM O_RollCall 
+    ->         WHERE student_id = v_student_id;
+    ->         
+    ->         -- If record doesn't exist, insert it
+    ->         IF v_exists = 0 THEN
+    ->             INSERT INTO O_RollCall (student_id, student_name, attendance_date, status)
+    ->             VALUES (v_student_id, v_student_name, v_attendance_date, v_status);
+    ->         END IF;
+    ->         
+    ->     END LOOP;
+    ->     
+    ->     -- Close cursor
+    ->     CLOSE cur_new_records;
+    ->     
+    -> END //
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> 
+mysql> DELIMITER ;
+mysql> 
+mysql> -- Call the procedure
+mysql> CALL MergeRollCall();
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> DELIMITER //
+mysql> 
+mysql> CREATE PROCEDURE DemonstrateCursors()
+    -> BEGIN
+    ->     -- Variables for explicit cursor
+    ->     DECLARE done INT DEFAULT FALSE;
+    ->     DECLARE v_id INT;
+    ->     DECLARE v_name VARCHAR(50);
+    ->     
+    ->     -- Parameterized cursor
+    ->     DECLARE v_status VARCHAR(10);
+    ->     
+    ->     -- Explicit cursor declaration
+    ->     DECLARE explicit_cur CURSOR FOR 
+    ->         SELECT student_id, student_name 
+    ->         FROM N_RollCall;
+    ->     
+    ->     -- Parameterized cursor declaration
+    ->     DECLARE param_cur CURSOR(p_status VARCHAR(10)) FOR 
+    ->         SELECT student_id, student_name 
+    ->         FROM N_RollCall 
+    ->         WHERE status = p_status;
+    ->     
+    ->     -- Handler for NOT FOUND condition
+    ->     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+    ->     
+    ->     -- 1. Implicit cursor (using SELECT ... INTO)
+    ->     SELECT COUNT(*) INTO @total_count FROM N_RollCall;
+    ->     SELECT CONCAT('Total records in N_RollCall: ', @total_count) AS 'Implicit Cursor Result';
+    ->     
+    ->     -- 2. Explicit cursor
+    ->     OPEN explicit_cur;
+    ->     
+    ->     explicit_loop: LOOP
+    ->         FETCH explicit_cur INTO v_id, v_name;
+    ->         IF done THEN
+    ->             LEAVE explicit_loop;
+    ->         END IF;
+    ->         SELECT CONCAT('Student ID: ', v_id, ', Name: ', v_name) AS 'Explicit Cursor Result';
+    ->     END LOOP;
+    ->     
+    ->     CLOSE explicit_cur;
+    ->     SET done = FALSE;
+    ->     
+    ->     -- 3. Parameterized cursor
+    ->     SET v_status = 'PRESENT';
+    ->     OPEN param_cur(v_status);
+    ->     
+    ->     param_loop: LOOP
+    ->         FETCH param_cur INTO v_id, v_name;
+    ->         IF done THEN
+    ->             LEAVE param_loop;
+    ->         END IF;
+    ->         SELECT CONCAT('Present Student ID: ', v_id, ', Name: ', v_name) AS 'Parameterized Cursor Result';
+    ->     END LOOP;
+    ->     
+    ->     CLOSE param_cur;
+    ->     
+    -> END //
+ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '(p_status VARCHAR(10)) FOR 
+        SELECT student_id, student_name 
+        FRO' at line 17
+mysql> 
+mysql> DELIMITER ;
+mysql> 
+mysql> -- Call the demonstration procedure
+mysql> CALL DemonstrateCursors();
+ERROR 1305 (42000): PROCEDURE library_management.DemonstrateCursors does not exist
+mysql> 
+
+
+
+
+mysql> DELIMITER //
+mysql> 
+mysql> CREATE PROCEDURE MergeRollCallWithAllCursors()
+    -> BEGIN
+    ->     -- Variables for cursors
+    ->     DECLARE done INT DEFAULT FALSE;
+    ->     DECLARE v_student_id INT;
+    ->     DECLARE v_student_name VARCHAR(50);
+    ->     DECLARE v_attendance_date DATE;
+    ->     DECLARE v_status VARCHAR(10);
+    ->     DECLARE v_count INT;
+    ->     DECLARE v_total_new INT;
+    ->     DECLARE v_total_merged INT DEFAULT 0;
+    ->     
+    ->     -- Declare cursors (MySQL requires all cursor declarations at the beginning)
+    ->     DECLARE duplicate_check CURSOR FOR 
+    ->         SELECT student_id, COUNT(*)
+    ->         FROM N_RollCall
+    ->         GROUP BY student_id
+    ->         HAVING COUNT(*) > 1;
+    ->         
+    ->     DECLARE present_merge CURSOR FOR 
+    ->         SELECT n.student_id, n.student_name, n.attendance_date, n.status
+    ->         FROM N_RollCall n
+    ->         WHERE n.status = 'PRESENT'
+    ->         AND NOT EXISTS (
+    ->             SELECT 1 
+    ->             FROM O_RollCall o 
+    ->             WHERE o.student_id = n.student_id
+    ->         );
+    ->         
+    ->     DECLARE absent_merge CURSOR FOR 
+    ->         SELECT n.student_id, n.student_name, n.attendance_date, n.status
+    ->         FROM N_RollCall n
+    ->         WHERE n.status = 'ABSENT'
+    ->         AND NOT EXISTS (
+    ->             SELECT 1 
+    ->             FROM O_RollCall o 
+    ->             WHERE o.student_id = n.student_id
+    ->         );
+    ->     
+    ->     -- Declare continue handler for NOT FOUND condition
+    ->     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+    ->     
+    ->     -- 1. Implicit Cursor: Get total count of records in N_RollCall
+    ->     SELECT COUNT(*) INTO v_total_new 
+    ->     FROM N_RollCall;
+    ->     
+    ->     -- Display total records to be processed
+    ->     SELECT CONCAT('Total records in N_RollCall: ', v_total_new) AS 'Processing Summary';
+    ->     
+    ->     -- 2. Explicit Cursor: Check for duplicate records
+    ->     OPEN duplicate_check;
+    ->     duplicate_loop: LOOP
+    ->         FETCH duplicate_check INTO v_student_id, v_count;
+    ->         IF done THEN
+    ->             LEAVE duplicate_loop;
+    ->         END IF;
+    ->         SELECT CONCAT('Warning: Student ID ', v_student_id, ' has ', v_count, ' duplicate records') AS 'Duplicate Check';
+    ->     END LOOP;
+    ->     
+    ->     CLOSE duplicate_check;
+    ->     SET done = FALSE;
+    ->     
+    ->     -- 3. Process PRESENT status records
+    ->     OPEN present_merge;
+    ->     present_loop: LOOP
+    ->         FETCH present_merge INTO v_student_id, v_student_name, v_attendance_date, v_status;
+    ->         IF done THEN
+    ->             LEAVE present_loop;
+    ->         END IF;
+    ->         
+    ->         INSERT INTO O_RollCall (student_id, student_name, attendance_date, status)
+    ->         VALUES (v_student_id, v_student_name, v_attendance_date, v_status);
+    ->         
+    ->         SET v_total_merged = v_total_merged + 1;
+    ->         
+    ->         SELECT CONCAT('Merged: Student ID ', v_student_id, ' - ', v_student_name, ' (', v_status, ')') AS 'Merge Status';
+    ->     END LOOP;
+    ->     
+    ->     CLOSE present_merge;
+    ->     SET done = FALSE;
+    ->     
+    ->     -- Process ABSENT status records
+    ->     OPEN absent_merge;
+    ->     absent_loop: LOOP
+    ->         FETCH absent_merge INTO v_student_id, v_student_name, v_attendance_date, v_status;
+    ->         IF done THEN
+    ->             LEAVE absent_loop;
+    ->         END IF;
+    ->         
+    ->         INSERT INTO O_RollCall (student_id, student_name, attendance_date, status)
+    ->         VALUES (v_student_id, v_student_name, v_attendance_date, v_status);
+    ->         
+    ->         SET v_total_merged = v_total_merged + 1;
+    ->         
+    ->         SELECT CONCAT('Merged: Student ID ', v_student_id, ' - ', v_student_name, ' (', v_status, ')') AS 'Merge Status';
+    ->     END LOOP;
+    ->     
+    ->     CLOSE absent_merge;
+    ->     
+    ->     -- 4. Final summary using regular SELECT
+    ->     SELECT 
+    ->         CONCAT('Final Summary - Total Records: ', 
+    ->                (SELECT COUNT(*) FROM O_RollCall),
+    ->                ', Present: ', 
+    ->                (SELECT COUNT(*) FROM O_RollCall WHERE status = 'PRESENT'),
+    ->                ', Absent: ', 
+    ->                (SELECT COUNT(*) FROM O_RollCall WHERE status = 'ABSENT'),
+    ->                ', Newly Merged: ', 
+    ->                v_total_merged) AS 'Merge Complete';
+    ->     
+    -> END //
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> 
+mysql> DELIMITER ;
+mysql> 
+mysql> 
+mysql> 
+mysql> 
+mysql> CALL MergeRollCallWithAllCursors();
++--------------------------------+
+| Processing Summary             |
++--------------------------------+
+| Total records in N_RollCall: 3 |
++--------------------------------+
+1 row in set (0.00 sec)
+
++--------------------------------------------------------------------------+
+| Merge Complete                                                           |
++--------------------------------------------------------------------------+
+| Final Summary - Total Records: 4, Present: 3, Absent: 1, Newly Merged: 0 |
++--------------------------------------------------------------------------+
+1 row in set (0.00 sec)
+
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> 
+

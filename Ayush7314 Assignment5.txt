@@ -1,0 +1,111 @@
+mysql> CREATE TABLE Stud_Marks (
+    ->     Roll INT PRIMARY KEY,
+    ->     Name VARCHAR(50),
+    ->     Total_Marks INT
+    -> );
+Query OK, 0 rows affected (0.04 sec)
+
+mysql> 
+mysql> CREATE TABLE Result (
+    ->     Roll INT,
+    ->     Name VARCHAR(50),
+    ->     Class VARCHAR(50),
+    ->     FOREIGN KEY (Roll) REFERENCES Stud_Marks(Roll)
+    -> );
+Query OK, 0 rows affected (0.04 sec)
+
+mysql> DELIMITER $$
+mysql> 
+mysql> CREATE PROCEDURE proc_Grade(
+    ->     IN p_roll INT,
+    ->     IN p_name VARCHAR(50),
+    ->     IN p_marks INT
+    -> )
+    -> BEGIN
+    ->     DECLARE v_class VARCHAR(50);
+    ->     
+    ->     -- Validate marks range
+    ->     IF p_marks < 0 OR p_marks > 1500 THEN
+    ->         SIGNAL SQLSTATE '45000'
+    ->         SET MESSAGE_TEXT = 'Invalid marks. Must be between 0 and 1500';
+    ->     END IF;
+    -> 
+    ->     -- Determine the grade category
+    ->     IF p_marks >= 990 AND p_marks <= 1500 THEN
+    ->         SET v_class = 'Distinction';
+    ->     ELSEIF p_marks >= 900 AND p_marks <= 989 THEN
+    ->         SET v_class = 'First Class';
+    ->     ELSEIF p_marks >= 825 AND p_marks <= 899 THEN
+    ->         SET v_class = 'Higher Second Class';
+    ->     ELSE
+    ->         SET v_class = 'Pass';
+    ->     END IF;
+    -> 
+    ->     -- Insert into Result table
+    ->     INSERT INTO Result (Roll, Name, Class)
+    ->     VALUES (p_roll, p_name, v_class);
+    -> 
+    ->     -- Return the result
+    ->     SELECT CONCAT('Student: ', p_name, ' has been categorized as: ', v_class) AS Result;
+    -> END$$
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> 
+mysql> DELIMITER ;
+mysql> -- Insert test data
+mysql> INSERT INTO Stud_Marks VALUES 
+    -> (1, 'John Doe', 1200),
+    -> (2, 'Jane Smith', 950),
+    -> (3, 'Bob Wilson', 880);
+Query OK, 3 rows affected (0.01 sec)
+Records: 3  Duplicates: 0  Warnings: 0
+
+mysql> 
+mysql> -- Call procedure for each student
+mysql> CALL proc_Grade(1, 'John Doe', 1200);
++--------------------------------------------------------+
+| Result                                                 |
++--------------------------------------------------------+
+| Student: John Doe has been categorized as: Distinction |
++--------------------------------------------------------+
+1 row in set (0.00 sec)
+
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> CALL proc_Grade(2, 'Jane Smith', 950);
++----------------------------------------------------------+
+| Result                                                   |
++----------------------------------------------------------+
+| Student: Jane Smith has been categorized as: First Class |
++----------------------------------------------------------+
+1 row in set (0.01 sec)
+
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> CALL proc_Grade(3, 'Bob Wilson', 880);
++------------------------------------------------------------------+
+| Result                                                           |
++------------------------------------------------------------------+
+| Student: Bob Wilson has been categorized as: Higher Second Class |
++------------------------------------------------------------------+
+1 row in set (0.00 sec)
+
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> 
+mysql> -- View results
+mysql> SELECT s.Roll, s.Name, s.Total_Marks, r.Class 
+    -> FROM Stud_Marks s 
+    -> JOIN Result r ON s.Roll = r.Roll 
+    -> ORDER BY s.Roll;
++------+------------+-------------+---------------------+
+| Roll | Name       | Total_Marks | Class               |
++------+------------+-------------+---------------------+
+|    1 | John Doe   |        1200 | Distinction         |
+|    2 | Jane Smith |         950 | First Class         |
+|    3 | Bob Wilson |         880 | Higher Second Class |
++------+------------+-------------+---------------------+
+3 rows in set (0.00 sec)
+
+mysql> 
+

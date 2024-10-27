@@ -1,0 +1,195 @@
+mysql> 
+mysql> -- First, let's create the necessary tables
+hmysql> CREATE TABLE Library (
+    ->     book_id INT PRIMARY KEY,
+    ->     title VARCHAR(100),
+    ->     author VARCHAR(100),
+    ->     isbn VARCHAR(13),
+    ->     status VARCHAR(20),
+    ->     copies_available INT,
+    ->     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    -> );
+Query OK, 0 rows affected (0.03 sec)
+
+mysql> 
+imysql> CREATE TABLE Library_Audit (
+    ->     audit_id INT PRIMARY KEY AUTO_INCREMENT,
+    ->     book_id INT,
+u    ->     action_type VARCHAR(20),
+    ->     field_name VARCHAR(50),
+    ->     old_value VARCHAR(100),
+    ->     new_value VARCHAR(100),
+    ->     changed_by VARCHAR(100),
+    ->     change_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ->     table_operation VARCHAR(20)
+    -> );
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> 
+Wmysql> -- Create a table for statement-level audit
+mysql> CREATE TABLE Library_Batch_Audit (
+    ->     batch_id INT PRIMARY KEY AUTO_INCREMENT,
+    ->     operation_type VARCHAR(20),
+    ->     records_affected INT,
+    ->     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ->     user_info VARCHAR(100)
+    -> );
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> 
+mysql> DELIMITER //
+mysql> 
+mysql> -- 1. BEFORE UPDATE Row-Level Trigger
+mysql> CREATE TRIGGER before_library_update
+    -> BEFORE UPDATE ON Library
+    -> FOR EACH ROW
+    -> BEGIN
+    ->     -- Audit changes to title
+    ->     IF OLD.title != NEW.title OR (OLD.title IS NULL AND NEW.title IS NOT NULL) OR (OLD.title IS NOT NULL AND NEW.title IS NULL) THEN
+    ->         INSERT INTO Library_Audit (book_id, action_type, field_name, old_value, new_value, changed_by, table_operation)
+    ->         VALUES (OLD.book_id, 'UPDATE', 'title', OLD.title, NEW.title, CURRENT_USER(), 'BEFORE');
+    ->     END IF;
+    ->     
+    ->     -- Audit changes to author
+    ->     IF OLD.author != NEW.author OR (OLD.author IS NULL AND NEW.author IS NOT NULL) OR (OLD.author IS NOT NULL AND NEW.author IS NULL) THEN
+    ->         INSERT INTO Library_Audit (book_id, action_type, field_name, old_value, new_value, changed_by, table_operation)
+    ->         VALUES (OLD.book_id, 'UPDATE', 'author', OLD.author, NEW.author, CURRENT_USER(), 'BEFORE');
+    ->     END IF;
+    ->     
+    ->     -- Audit changes to status
+    ->     IF OLD.status != NEW.status OR (OLD.status IS NULL AND NEW.status IS NOT NULL) OR (OLD.status IS NOT NULL AND NEW.status IS NULL) THEN
+    ->         INSERT INTO Library_Audit (book_id, action_type, field_name, old_value, new_value, changed_by, table_operation)
+    ->         VALUES (OLD.book_id, 'UPDATE', 'status', OLD.status, NEW.status, CURRENT_USER(), 'BEFORE');
+    ->     END IF;
+    ->     
+    ->     -- Update last_updated timestamp
+    ->     SET NEW.last_updated = CURRENT_TIMESTAMP;
+    -> END//
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> 
+mysql> -- 2. AFTER DELETE Row-Level Trigger
+mysql> CREATE TRIGGER after_library_delete
+    -> AFTER DELETE ON Library
+    -> FOR EACH ROW
+    -> BEGIN
+    ->     -- Record complete row deletion
+    ->     INSERT INTO Library_Audit (book_id, action_type, field_name, old_value, new_value, changed_by, table_operation)
+    ->     VALUES (
+    ->         OLD.book_id,
+    ->         'DELETE',
+    ->         'FULL_RECORD',
+    ->         CONCAT('Title:', OLD.title, ', Author:', OLD.author, ', ISBN:', OLD.isbn, ', Status:', OLD.status),
+    ->         NULL,
+    ->         CURRENT_USER(),
+    ->         'AFTER'
+    ->     );
+    -> END//
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> 
+mysql> -- 3. BEFORE DELETE Statement-Level Trigger
+mysql> CREATE TRIGGER before_library_delete_statement
+    -> BEFORE DELETE ON Library
+    -> FOR EACH ROW
+    -> BEGIN
+    ->     -- Update batch audit counter using user-defined variable
+    ->     SET @delete_count = IFNULL(@delete_count, 0) + 1;
+    -> END//
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> 
+mysql> -- 4. AFTER UPDATE Statement-Level Trigger
+mysql> CREATE TRIGGER after_library_update_statement
+    -> AFTER UPDATE ON Library
+    -> FOR EACH ROW
+    -> BEGIN
+    ->     -- Update batch audit counter using user-defined variable
+    ->     SET @update_count = IFNULL(@update_count, 0) + 1;
+    -> END//
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> 
+mysql> -- 5. Procedure to finalize statement-level audit
+mysql> CREATE PROCEDURE LogBatchOperation(IN operation_type VARCHAR(20))
+    -> BEGIN
+    ->     DECLARE affected_rows INT;
+    ->     
+    ->     -- Get the appropriate counter based on operation type
+    ->     IF operation_type = 'DELETE' THEN
+    ->         SET affected_rows = IFNULL(@delete_count, 0);
+    ->         SET @delete_count = 0;
+    ->     ELSE
+    ->         SET affected_rows = IFNULL(@update_count, 0);
+    ->         SET @update_count = 0;
+    ->     END IF;
+    ->     
+    ->     -- Log batch operation
+    ->     IF affected_rows > 0 THEN
+    ->         INSERT INTO Library_Batch_Audit (operation_type, records_affected, user_info)
+    ->         VALUES (operation_type, affected_rows, CURRENT_USER());
+    ->     END IF;
+    -> END//
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> 
+mysql> DELIMITER ;
+mysql> 
+mysql> -- Sample data for testing
+mysql> INSERT INTO Library (book_id, title, author, isbn, status, copies_available) VALUES
+    -> (1, 'The Great Gatsby', 'F. Scott Fitzgerald', '9780743273565', 'Available', 5),
+    -> (2, 'To Kill a Mockingbird', 'Harper Lee', '9780446310789', 'Available', 3),
+    -> (3, '1984', 'George Orwell', '9780451524935', 'Available', 4);
+Query OK, 3 rows affected (0.01 sec)
+Records: 3  Duplicates: 0  Warnings: 0
+
+mysql> 
+mysql> -- Test the triggers with these operations:
+mysql> 
+mysql> -- 1. Update a single book's status
+mysql> UPDATE Library 
+    -> SET status = 'Checked Out', copies_available = copies_available - 1 
+    -> WHERE book_id = 1;
+Query OK, 1 row affected (0.00 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql> 
+mysql> -- 2. Delete a book
+mysql> DELETE FROM Library WHERE book_id = 3;
+Query OK, 1 row affected (0.00 sec)
+
+mysql> 
+mysql> -- 3. Batch update multiple books
+mysql> UPDATE Library 
+    -> SET copies_available = copies_available + 1 
+    -> WHERE status = 'Available';
+Query OK, 1 row affected (0.01 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql> 
+mysql> -- 4. Call the batch audit procedure after batch operations
+mysql> CALL LogBatchOperation('UPDATE');
+Query OK, 1 row affected (0.01 sec)
+
+mysql> -- View detailed audit records
+mysql> SELECT * FROM Library_Audit ORDER BY change_timestamp DESC;
++----------+---------+-------------+-------------+------------------------------------------------------------------------+-------------+----------------+---------------------+-----------------+
+| audit_id | book_id | action_type | field_name  | old_value                                                              | new_value   | changed_by     | change_timestamp    | table_operation |
++----------+---------+-------------+-------------+------------------------------------------------------------------------+-------------+----------------+---------------------+-----------------+
+|        1 |       1 | UPDATE      | status      | Available                                                              | Checked Out | root@localhost | 2024-10-27 14:02:29 | BEFORE          |
+|        2 |       3 | DELETE      | FULL_RECORD | Title:1984, Author:George Orwell, ISBN:9780451524935, Status:Available | NULL        | root@localhost | 2024-10-27 14:02:29 | AFTER           |
++----------+---------+-------------+-------------+------------------------------------------------------------------------+-------------+----------------+---------------------+-----------------+
+2 rows in set (0.00 sec)
+
+mysql> 
+mysql> -- View batch operation summaries
+mysql> SELECT * FROM Library_Batch_Audit ORDER BY timestamp DESC;
++----------+----------------+------------------+---------------------+----------------+
+| batch_id | operation_type | records_affected | timestamp           | user_info      |
++----------+----------------+------------------+---------------------+----------------+
+|        1 | UPDATE         |                2 | 2024-10-27 14:02:30 | root@localhost |
++----------+----------------+------------------+---------------------+----------------+
+1 row in set (0.00 sec)
+
+mysql> 
+

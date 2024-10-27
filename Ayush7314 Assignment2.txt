@@ -1,0 +1,114 @@
+mysql> create database Ayush;
+
+mysql> use Ayush
+Database changed
+
+mysql> CREATE TABLE students (
+    ->     student_id INT PRIMARY KEY,
+    ->     first_name VARCHAR(50) NOT NULL,
+    ->     last_name VARCHAR(50),
+    ->     age INT,
+    ->     department_id INT,
+    ->     email VARCHAR(100) UNIQUE,
+    ->     enrollment_date DATE DEFAULT (CURRENT_DATE)
+    -> );
+
+mysql> desc students;
+
+
+INSERT INTO students (student_id, first_name, last_name, age, department_id, email, enrollment_date) 
+VALUES (1, 'John', 'Doe', 20, 101, 'john.doe@example.com', '2023-09-01');
+
+INSERT INTO students (student_id, first_name, last_name, age, department_id, email, enrollment_date) 
+VALUES (2, 'Jane', 'Smith', 22, 102, 'jane.smith@example.com', '2023-09-05');
+
+INSERT INTO students (student_id, first_name, last_name, age, department_id, email, enrollment_date) 
+VALUES (3, 'Alice', 'Johnson', 19, 103, 'alice.johnson@example.com', '2023-09-10');
+
+INSERT INTO students (student_id, first_name, last_name, age, department_id, email, enrollment_date) 
+VALUES (4, 'Bob', 'Brown', 23, 104, 'bob.brown@example.com', '2023-09-15');
+
+INSERT INTO students (student_id, first_name, last_name, age, department_id, email, enrollment_date) 
+VALUES (5, 'Charlie', 'Davis', 21, 105, 'charlie.davis@example.com', '2023-09-20');
+
+INSERT INTO students (student_id, first_name, last_name, age, department_id, email, enrollment_date) 
+VALUES (6, 'Emily', 'Wilson', 18, 106, 'emily.wilson@example.com', '2023-09-25');
+
+
+
+mysql> select * from students;
+
+
+Creating View:
+
+CREATE VIEW student_info AS
+SELECT student_id, CONCAT(first_name, ' ', last_name) AS full_name, age, department_id
+FROM students;
+
+mysql> select * from student_info
+
+
+Creating Index:
+CREATE INDEX idx_age ON students (age);
+
+SHOW INDEX FROM students;
+
+
+Creating a Sequence
+CREATE SEQUENCE student_seq
+START WITH 7
+INCREMENT BY 1;
+
+
+
+b.
+
+
+INSERT Statements:
+INSERT INTO students (student_id, first_name, last_name, age, department_id, email, enrollment_date) 
+VALUES (7, 'David', 'Wilson', 24, 107, 'david.wilson@example.com', '2023-10-01');
+mysql> select * from student
+
+
+DELETE:
+DELETE FROM students 
+WHERE student_id = 6;
+
+mysql> select * from student
+
+
+UPDATE:
+UPDATE students 
+SET email = 'john.new@example.com' 
+WHERE student_id = 1;
+
+mysql> select * from student
+
+
+Select Students from a Specific Department:
+SELECT * FROM students WHERE department_id = 101;
+
+
+Count:
+SELECT COUNT(*) AS total_students FROM students;
+
+mysql> select * from student
+
+Find:
+SELECT * FROM students WHERE age > 21;
+
+mysql> select * from student
+
+
+List:
+SELECT * FROM students ORDER BY enrollment_date ASC;
+
+mysql> select * from student
+
+
+Ordered :
+SELECT * FROM students ORDER BY last_name ASC;
+
+mysql> select * from student
+
+

@@ -1,0 +1,607 @@
+library_db> use library_management
+switched to db library_management
+library_management> 
+
+library_management> // Create the books collection with validation
+
+library_management> db.createCollection("books", {
+...    validator: {
+...       $jsonSchema: {
+...          bsonType: "object",
+...          required: ["title", "author", "isbn", "status", "copies_available"],
+...          properties: {
+...             title: {
+...                bsonType: "string",
+...                description: "must be a string and is required"
+...             },
+...             author: {
+...                bsonType: "string",
+...                description: "must be a string and is required"
+...             },
+...             isbn: {
+...                bsonType: "string",
+...                description: "must be a string and is required"
+...             },
+...             status: {
+...                enum: ["Available", "Unavailable"],
+...                description: "can only be one of the enum values"
+...             },
+...             copies_available: {
+...                bsonType: "int",
+...                minimum: 0,
+...                description: "must be an integer >= 0 and is required"
+...             }
+...          }
+...       }
+...    }
+... })
+{ ok: 1 }
+library_management> 
+
+library_management> // Basic CRUD Operations
+
+library_management> 
+
+library_management> // 1. Insert a book
+
+library_management> db.books.insertOne({
+...     title: "The Great Gatsby",
+...     author: "F. Scott Fitzgerald",
+...     isbn: "978-0743273565",
+...     status: "Available",
+...     copies_available: 5
+... })
+{
+  acknowledged: true,
+  insertedId: ObjectId('671e05004139370eed838730')
+}
+library_management> 
+
+library_management> // 2. Find all books
+
+library_management> db.books.find()
+[
+  {
+    _id: ObjectId('671e05004139370eed838730'),
+    title: 'The Great Gatsby',
+    author: 'F. Scott Fitzgerald',
+    isbn: '978-0743273565',
+    status: 'Available',
+    copies_available: 5
+  }
+]
+library_management> 
+
+library_management> // 3. Update a book
+
+library_management> db.books.updateOne(
+...     { isbn: "978-0743273565" },
+...     {
+...         $set: {
+...             copies_available: 4,
+...             status: "Available"
+...         }
+...     }
+... )
+{
+  acknowledged: true,
+  insertedId: null,
+  matchedCount: 1,
+  modifiedCount: 1,
+  upsertedCount: 0
+}
+library_management> 
+
+library_management> // 4. Delete a book
+
+library_management> db.books.deleteOne({ isbn: "978-0743273565" })
+{ acknowledged: true, deletedCount: 1 }
+library_management> 
+
+library_management> // Map-Reduce Operations
+
+library_management> 
+
+library_management> // 1. Count books by author
+
+library_management> var mapAuthorCount = function() {
+...     emit(this.author, 1);
+... };
+
+library_management> 
+
+library_management> var reduceAuthorCount = function(key, values) {
+...     return Array.sum(values);
+... };
+
+library_management> 
+
+library_management> db.books.mapReduce(
+...     mapAuthorCount,
+...     reduceAuthorCount,
+...     {
+...         out: "author_book_counts"
+...     }
+... )
+{ result: 'author_book_counts', ok: 1 }
+library_management> 
+
+library_management> // View results
+
+library_management> db.author_book_counts.find()
+
+library_management> 
+
+library_management> // 2. Calculate total copies available by author
+
+library_management> var mapAuthorCopies = function() {
+...     emit(this.author, this.copies_available);
+... };
+
+library_management> 
+
+library_management> var reduceAuthorCopies = function(key, values) {
+...     return Array.sum(values);
+... };
+
+library_management> 
+
+library_management> db.books.mapReduce(
+...     mapAuthorCopies,
+...     reduceAuthorCopies,
+...     {
+...         out: "author_total_copies"
+...     }
+... )
+{ result: 'author_total_copies', ok: 1 }
+library_management> 
+
+library_management> // View results
+
+library_management> db.author_total_copies.find()
+
+library_management> 
+
+library_management> // 3. Get average copies per book by status
+
+library_management> var mapStatusAvg = function() {
+...     emit(this.status, {
+...         count: 1,
+...         total_copies: this.copies_available
+...     });
+... };
+
+library_management> 
+
+library_management> var reduceStatusAvg = function(key, values) {
+...     var result = { count: 0, total_copies: 0 };
+...     values.forEach(function(value) {
+...         result.count += value.count;
+...         result.total_copies += value.total_copies;
+...     });
+...     return result;
+... };
+
+library_management> 
+
+library_management> var finalizeStatusAvg = function(key, reducedValue) {
+...     reducedValue.average = reducedValue.total_copies / reducedValue.count;
+...     return reducedValue;
+... };
+
+library_management> 
+
+library_management> db.books.mapReduce(
+...     mapStatusAvg,
+...     reduceStatusAvg,
+...     {
+...         out: "status_averages",
+...         finalize: finalizeStatusAvg
+...     }
+... )
+{ result: 'status_averages', ok: 1 }
+library_management> 
+
+library_management> // View results
+
+library_management> db.status_averages.find()
+
+library_management> 
+
+library_management> // 4. Get book count by ISBN prefix (publisher)
+
+library_management> var mapPublisherCount = function() {
+...     // Extract first 3 digits of ISBN (publisher prefix)
+...     var publisher = this.isbn.substring(0, 3);
+...     emit(publisher, 1);
+... };
+
+library_management> 
+
+library_management> var reducePublisherCount = function(key, values) {
+...     return Array.sum(values);
+... };
+
+library_management> 
+
+library_management> db.books.mapReduce(
+...     mapPublisherCount,
+...     reducePublisherCount,
+...     {
+...         out: "publisher_book_counts"
+...     }
+... )
+{ result: 'publisher_book_counts', ok: 1 }
+library_management> 
+
+library_management> // View results
+
+library_management> db.publisher_book_counts.find()
+
+library_management> 
+
+library_management> // Sample queries to insert test data
+
+library_management> db.books.insertMany([
+...     {
+...         title: "1984",
+...         author: "George Orwell",
+...         isbn: "978-0451524935",
+...         status: "Available",
+...         copies_available: 3
+...     },
+...     {
+...         title: "Brave New World",
+...         author: "Aldous Huxley",
+...         isbn: "978-0060850524",
+...         status: "Available",
+...         copies_available: 2
+...     },
+...     {
+...         title: "Animal Farm",
+...         author: "George Orwell",
+...         isbn: "978-0451526342",
+...         status: "Available",
+...         copies_available: 4
+...     },
+...     {
+...         title: "The Catcher in the Rye",
+...         author: "J.D. Salinger",
+...         isbn: "978-0316769488",
+...         status: "Unavailable",
+...         copies_available: 0
+...     }
+... ])
+{
+  acknowledged: true,
+  insertedIds: {
+    '0': ObjectId('671e05024139370eed838731'),
+    '1': ObjectId('671e05024139370eed838732'),
+    '2': ObjectId('671e05024139370eed838733'),
+    '3': ObjectId('671e05024139370eed838734')
+  }
+}
+library_management> // First, check the books collection
+
+library_management> db.books.find().pretty()
+[
+  {
+    _id: ObjectId('671e05024139370eed838731'),
+    title: '1984',
+    author: 'George Orwell',
+    isbn: '978-0451524935',
+    status: 'Available',
+    copies_available: 3
+  },
+  {
+    _id: ObjectId('671e05024139370eed838732'),
+    title: 'Brave New World',
+    author: 'Aldous Huxley',
+    isbn: '978-0060850524',
+    status: 'Available',
+    copies_available: 2
+  },
+  {
+    _id: ObjectId('671e05024139370eed838733'),
+    title: 'Animal Farm',
+    author: 'George Orwell',
+    isbn: '978-0451526342',
+    status: 'Available',
+    copies_available: 4
+  },
+  {
+    _id: ObjectId('671e05024139370eed838734'),
+    title: 'The Catcher in the Rye',
+    author: 'J.D. Salinger',
+    isbn: '978-0316769488',
+    status: 'Unavailable',
+    copies_available: 0
+  }
+]
+library_management> 
+
+
+
+
+library_management> db.status_averages.find().pretty()
+
+
+library_management> db.publisher_book_counts.find().pretty()
+
+library_management> // Output will look like:
+
+library_management> // {
+
+library_management> //     "_id" : "978",
+
+library_management> //     "value" : 4
+
+library_management> // }
+
+library_management> 
+
+library_management> // Additional useful queries with pretty output
+
+library_management> 
+
+library_management> // Find all books by specific author
+
+library_management> db.books.find({ author: "George Orwell" }).pretty()
+[
+  {
+    _id: ObjectId('671e05024139370eed838731'),
+    title: '1984',
+    author: 'George Orwell',
+    isbn: '978-0451524935',
+    status: 'Available',
+    copies_available: 3
+  },
+  {
+    _id: ObjectId('671e05024139370eed838733'),
+    title: 'Animal Farm',
+    author: 'George Orwell',
+    isbn: '978-0451526342',
+    status: 'Available',
+    copies_available: 4
+  }
+]
+library_management> 
+
+library_management> // Find books with more than 2 copies
+
+library_management> db.books.find({ copies_available: { $gt: 2 } }).pretty()
+[
+  {
+    _id: ObjectId('671e05024139370eed838731'),
+    title: '1984',
+    author: 'George Orwell',
+    isbn: '978-0451524935',
+    status: 'Available',
+    copies_available: 3
+  },
+  {
+    _id: ObjectId('671e05024139370eed838733'),
+    title: 'Animal Farm',
+    author: 'George Orwell',
+    isbn: '978-0451526342',
+    status: 'Available',
+    copies_available: 4
+  }
+]
+library_management> 
+
+library_management> // Find books by status
+
+library_management> db.books.find({ status: "Available" }).pretty()
+[
+  {
+    _id: ObjectId('671e05024139370eed838731'),
+    title: '1984',
+    author: 'George Orwell',
+    isbn: '978-0451524935',
+    status: 'Available',
+    copies_available: 3
+  },
+  {
+    _id: ObjectId('671e05024139370eed838732'),
+    title: 'Brave New World',
+    author: 'Aldous Huxley',
+    isbn: '978-0060850524',
+    status: 'Available',
+    copies_available: 2
+  },
+  {
+    _id: ObjectId('671e05024139370eed838733'),
+    title: 'Animal Farm',
+    author: 'George Orwell',
+    isbn: '978-0451526342',
+    status: 'Available',
+    copies_available: 4
+  }
+]
+library_management> 
+
+library_management> // Sort books by title and display nicely
+
+library_management> db.books.find().sort({ title: 1 }).pretty()
+[
+  {
+    _id: ObjectId('671e05024139370eed838731'),
+    title: '1984',
+    author: 'George Orwell',
+    isbn: '978-0451524935',
+    status: 'Available',
+    copies_available: 3
+  },
+  {
+    _id: ObjectId('671e05024139370eed838733'),
+    title: 'Animal Farm',
+    author: 'George Orwell',
+    isbn: '978-0451526342',
+    status: 'Available',
+    copies_available: 4
+  },
+  {
+    _id: ObjectId('671e05024139370eed838732'),
+    title: 'Brave New World',
+    author: 'Aldous Huxley',
+    isbn: '978-0060850524',
+    status: 'Available',
+    copies_available: 2
+  },
+  {
+    _id: ObjectId('671e05024139370eed838734'),
+    title: 'The Catcher in the Rye',
+    author: 'J.D. Salinger',
+    isbn: '978-0316769488',
+    status: 'Unavailable',
+    copies_available: 0
+  }
+]
+library_management> 
+
+library_management> // Aggregate example with pretty output
+
+library_management> db.books.aggregate([
+...     {
+...         $group: {
+...             _id: "$author",
+...             totalBooks: { $sum: 1 },
+...             totalCopies: { $sum: "$copies_available" },
+...             titles: { $push: "$title" }
+...         }
+...     }
+... ]).pretty()
+[
+  {
+    _id: 'Aldous Huxley',
+    totalBooks: 1,
+    totalCopies: 2,
+    titles: [ 'Brave New World' ]
+  },
+  {
+    _id: 'J.D. Salinger',
+    totalBooks: 1,
+    totalCopies: 0,
+    titles: [ 'The Catcher in the Rye' ]
+  },
+  {
+    _id: 'George Orwell',
+    totalBooks: 2,
+    totalCopies: 7,
+    titles: [ '1984', 'Animal Farm' ]
+  }
+]
+library_management> 
+
+library_management> // Find books with low copies (less than 3) - useful for inventory
+
+library_management> db.books.find({ 
+...     copies_available: { $lt: 3 } 
+... }).pretty()
+[
+  {
+    _id: ObjectId('671e05024139370eed838732'),
+    title: 'Brave New World',
+    author: 'Aldous Huxley',
+    isbn: '978-0060850524',
+    status: 'Available',
+    copies_available: 2
+  },
+  {
+    _id: ObjectId('671e05024139370eed838734'),
+    title: 'The Catcher in the Rye',
+    author: 'J.D. Salinger',
+    isbn: '978-0316769488',
+    status: 'Unavailable',
+    copies_available: 0
+  }
+]
+library_management> 
+
+library_management> // Advanced query combining multiple conditions
+
+library_management> db.books.find({
+...     $and: [
+...         { status: "Available" },
+...         { copies_available: { $gt: 0 } },
+...         { author: { $ne: null } }
+...     ]
+... }).pretty()
+[
+  {
+    _id: ObjectId('671e05024139370eed838731'),
+    title: '1984',
+    author: 'George Orwell',
+    isbn: '978-0451524935',
+    status: 'Available',
+    copies_available: 3
+  },
+  {
+    _id: ObjectId('671e05024139370eed838732'),
+    title: 'Brave New World',
+    author: 'Aldous Huxley',
+    isbn: '978-0060850524',
+    status: 'Available',
+    copies_available: 2
+  },
+  {
+    _id: ObjectId('671e05024139370eed838733'),
+    title: 'Animal Farm',
+    author: 'George Orwell',
+    isbn: '978-0451526342',
+    status: 'Available',
+    copies_available: 4
+  }
+]
+library_management> 
+
+library_management> // Sample data insertion with verification
+
+library_management> db.books.insertOne({
+...     title: "To Kill a Mockingbird",
+...     author: "Harper Lee",
+...     isbn: "978-0446310789",
+...     status: "Available",
+...     copies_available: 6
+... })
+{
+  acknowledged: true,
+  insertedId: ObjectId('671e052a4139370eed838735')
+}
+library_management> 
+
+library_management> // Verify the insertion
+
+library_management> db.books.find({ title: "To Kill a Mockingbird" }).pretty()
+[
+  {
+    _id: ObjectId('671e052a4139370eed838735'),
+    title: 'To Kill a Mockingbird',
+    author: 'Harper Lee',
+    isbn: '978-0446310789',
+    status: 'Available',
+    copies_available: 6
+  }
+]
+library_management> 
+
+library_management> // Show all unique authors
+
+library_management> db.books.distinct("author")
+[ 'Aldous Huxley', 'George Orwell', 'Harper Lee', 'J.D. Salinger' ]
+library_management> 
+
+library_management> // Count books by status
+
+library_management> db.books.aggregate([
+...     { 
+...         $group: {
+...             _id: "$status",
+...             count: { $sum: 1 }
+...         }
+...     }
+... ]).pretty()
+[ { _id: 'Unavailable', count: 1 }, { _id: 'Available', count: 4 } ]
+library_management> 
+

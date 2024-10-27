@@ -1,0 +1,99 @@
+CREATE TABLE employee (
+    employee_id INT PRIMARY KEY,
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    department_id INT,
+    salary DECIMAL(10, 2)
+);
+
+
+INSERT INTO employee (employee_id, first_name, last_name, department_id, salary) VALUES
+(1, 'John', 'Doe', 1, 60000.00),
+(2, 'Jane', 'Smith', 2, 75000.00),
+(3, 'Emily', 'Jones', 1, 50000.00),
+(4, 'Michael', 'Brown', 3, 80000.00),
+(5, 'Sarah', 'Davis', 2, 95000.00);
+
+
+mysql> select * from employee;
+
+
+
+CREATE TABLE department (
+    department_id INT PRIMARY KEY,
+    department_name VARCHAR(50)
+);
+
+INSERT INTO department (department_id, department_name) VALUES
+(1, 'HR'),
+(2, 'Finance'),
+(3, 'IT');
+
+mysql> select * from department;
+
+
+
+INNER JOIN: Retrieve employees along with their department names.
+
+SELECT e.first_name, e.last_name, d.department_name
+FROM employee e
+INNER JOIN department d ON e.department_id = d.department_id;
+
+
+
+LEFT JOIN: Retrieve all employees and their department names (including employees without a department).
+
+SELECT e.first_name, e.last_name, d.department_name
+FROM employee e
+LEFT JOIN department d ON e.department_id = d.department_id;
+
+
+
+Right Join: Retrieve all departments and their employees (including departments with no employees).
+
+SELECT d.department_name, e.first_name, e.last_name
+FROM department d
+RIGHT JOIN employee e ON d.department_id = e.department_id;
+
+
+
+Cross Join: Get all combinations of employees and departments.
+
+SELECT e.first_name, d.department_name
+FROM employee e
+CROSS JOIN department d;
+
+
+
+Sub-query: Retrieve employees with a salary greater than the average salary.
+
+SELECT first_name, last_name
+FROM employee
+WHERE salary > (SELECT AVG(salary) FROM employee);
+
+
+
+View: Create a view for employees' full names and their salaries.
+
+CREATE VIEW employee_salaries AS
+SELECT CONCAT(first_name, ' ', last_name) AS full_name, salary
+FROM employee;
+
+mysql> select * from employee_salaries;
+
+
+
+Self Join: Find pairs of employees in the same department.
+
+SELECT e1.first_name AS employee1, e2.first_name AS employee2
+FROM employee e1, employee e2
+WHERE e1.department_id = e2.department_id AND e1.employee_id <> e2.employee_id;
+
+
+
+Aggregation with Group By: Retrieve the number of employees in each department.
+
+SELECT d.department_name, COUNT(e.employee_id) AS employee_count
+FROM department d
+LEFT JOIN employee e ON d.department_id = e.department_id
+GROUP BY d.department_name;
