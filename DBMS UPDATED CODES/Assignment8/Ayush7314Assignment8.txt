@@ -1,0 +1,129 @@
+
+
+
+
+
+mysql> GRANT ALL PRIVILEGES ON Assignment8.* TO 'Ayush'@'localhost';
+ERROR 1410 (42000): You are not allowed to create a user with GRANT
+mysql> CREATE USER 'Ayush'@'localhost' IDENTIFIED BY 'ayush123';
+Query OK, 0 rows affected (0.03 sec)
+
+mysql> CREATE DATABASE Assignment8;
+Query OK, 1 row affected (0.02 sec)
+
+mysql> GRANT ALL PRIVILEGES ON Assignment8.* TO 'Ayush'@'localhost';
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> FLUSH PRIVILEGES;
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> USE Assignment8;
+Database changed
+mysql> 
+mysql> CREATE TABLE users (
+    ->     id INT AUTO_INCREMENT PRIMARY KEY,
+    ->     name VARCHAR(100),
+    ->     age INT,
+    ->     email VARCHAR(100)
+    -> );
+Query OK, 0 rows affected (0.03 sec)
+
+mysql> exit
+Bye
+root@pop-os:/home/argus/Desktop/DBMSFinale/Assignment8# python3 Ayush7314Assignment8.py
+Successfully connected to MySQL database!
+
+Database Operations Menu:
+1. Add Record
+2. View Records
+3. Edit Record
+4. Delete Record
+5. Exit
+
+Enter your choice (1-5): 1
+Enter name: AYush
+Enter age: 21
+Enter email: ayush@gmail.com
+Record added successfully!
+
+Database Operations Menu:
+1. Add Record
+2. View Records
+3. Edit Record
+4. Delete Record
+5. Exit
+
+Enter your choice (1-5): 2
+
+All Records:
+ID	Name	Age	Email
+--------------------------------------------------
+1	AYush	21	ayush@gmail.com
+
+Database Operations Menu:
+1. Add Record
+2. View Records
+3. Edit Record
+4. Delete Record
+5. Exit
+
+Enter your choice (1-5): 3
+Enter the ID of the record to edit: 1
+
+Current values:
+1. Name: AYush
+2. Age: 21
+3. Email: ayush@gmail.com
+
+Which field do you want to edit (1-3)? 1
+Enter new value: Ayush
+Record updated successfully!
+
+Database Operations Menu:
+1. Add Record
+2. View Records
+3. Edit Record
+4. Delete Record
+5. Exit
+
+Enter your choice (1-5): 2
+
+All Records:
+ID	Name	Age	Email
+--------------------------------------------------
+1	Ayush	21	ayush@gmail.com
+
+Database Operations Menu:
+1. Add Record
+2. View Records
+3. Edit Record
+4. Delete Record
+5. Exit
+
+Enter your choice (1-5): 4
+Enter the ID of the record to delete: 1
+Are you sure you want to delete this record? (y/n): y
+Record deleted successfully!
+
+Database Operations Menu:
+1. Add Record
+2. View Records
+3. Edit Record
+4. Delete Record
+5. Exit
+
+Enter your choice (1-5): 2
+No records found.
+
+Database Operations Menu:
+1. Add Record
+2. View Records
+3. Edit Record
+4. Delete Record
+5. Exit
+
+Enter your choice (1-5): 5
+MySQL connection closed.
+Goodbye!
+root@pop-os:/home/argus/Desktop/DBMSFinale/Assignment8# 
+
