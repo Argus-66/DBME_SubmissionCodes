@@ -1,0 +1,528 @@
+mysql> 
+mysql> CREATE TABLE O_RollCall (
+    ->     Roll_no INT PRIMARY KEY,
+    ->     Name VARCHAR(50),
+    ->     Class VARCHAR(20),
+    ->     Division CHAR(1),
+    ->     Status CHAR(1)
+    -> );
+Query OK, 0 rows affected (0.03 sec)
+
+mysql> CREATE TABLE N_RollCall (
+    ->     Roll_no INT PRIMARY KEY,
+    ->     Name VARCHAR(50),
+    ->     Class VARCHAR(20),
+    ->     Division CHAR(1),
+    ->     Status CHAR(1)
+    -> );
+Query OK, 0 rows affected (0.05 sec)
+
+mysql> INSERT INTO O_RollCall VALUES
+    -> (101, 'Rajesh Kumar', 'FY-BSc', 'A', 'P'),
+    -> (102, 'Priya Sharma', 'FY-BSc', 'B', 'P'),
+    -> (103, 'Amit Patel', 'FY-BSc', 'A', 'A'),
+    -> (104, 'Neha Verma', 'FY-BSc', 'B', 'P'),
+    -> (105, 'Suresh Reddy', 'FY-BSc', 'A', 'P'),
+    -> (106, 'Deepa Malhotra', 'FY-BSc', 'B', 'A');
+Query OK, 6 rows affected (0.01 sec)
+Records: 6  Duplicates: 0  Warnings: 0
+
+mysql> INSERT INTO N_RollCall VALUES
+    -> (103, 'Amit Patel', 'FY-BSc', 'A', 'P'),          -- Existing record
+    -> (104, 'Neha Verma', 'FY-BSc', 'B', 'A'),          -- Existing record
+    -> (107, 'Arun Gupta', 'FY-BSc', 'A', 'P'),          -- New record
+    -> (108, 'Meera Desai', 'FY-BSc', 'B', 'P'),         -- New record
+    -> (109, 'Karthik Iyer', 'FY-BSc', 'A', 'A'),        -- New record
+    -> (110, 'Ananya Das', 'FY-BSc', 'B', 'P'),          -- New record
+    -> (111, 'Rahul Kapoor', 'FY-BSc', 'A', 'P'),        -- New record
+    -> (112, 'Sneha Singh', 'FY-BSc', 'B', 'A');   
+Query OK, 8 rows affected (0.01 sec)
+Records: 8  Duplicates: 0  Warnings: 0
+
+mysql> DELIMITER //
+mysql> 
+mysql> CREATE PROCEDURE Merge_RollCall(
+    ->     IN p_class VARCHAR(20),
+    ->     IN p_division CHAR(1)
+    -> )
+    -> BEGIN
+    ->     -- Declare variables
+    ->     DECLARE v_roll_no INT;
+    ->     DECLARE v_name VARCHAR(50);
+    ->     DECLARE v_status CHAR(1);
+    ->     DECLARE v_exists INT;
+    ->     DECLARE v_finished INT DEFAULT 0;
+    ->     
+    ->     -- Declare parameterized cursor
+    ->     DECLARE cur_new_rollcall CURSOR FOR 
+    ->         SELECT Roll_no, Name, Status 
+    ->         FROM N_RollCall 
+    ->         WHERE Class = p_class 
+    ->         AND Division = p_division;
+    ->     
+    ->     -- Declare handler for cursor
+    ->     DECLARE CONTINUE HANDLER FOR NOT FOUND 
+    ->         SET v_finished = 1;
+    ->     
+    ->     -- Open cursor
+    ->     OPEN cur_new_rollcall;
+    ->     
+    ->     merge_loop: LOOP
+    ->         -- Fetch records from cursor
+    ->         FETCH cur_new_rollcall INTO v_roll_no, v_name, v_status;
+    ->         
+    ->         -- Exit loop if no more records
+    ->         IF v_finished = 1 THEN
+    ->             LEAVE merge_loop;
+    ->         END IF;
+    ->         
+    ->         -- Check if record exists in O_RollCall
+    ->         SELECT COUNT(*) INTO v_exists 
+    ->         FROM O_RollCall 
+    ->         WHERE Roll_no = v_roll_no;
+    ->         
+    ->         -- Insert only if record doesn't exist
+    ->         IF v_exists = 0 THEN
+    ->             INSERT INTO O_RollCall (Roll_no, Name, Class, Division, Status)
+    ->             VALUES (v_roll_no, v_name, p_class, p_division, v_status);
+    ->             
+    ->             SELECT CONCAT('Inserted new record for student: ', v_name) AS Message;
+    ->         ELSE
+    ->             SELECT CONCAT('Skipped existing record for student: ', v_name) AS Message;
+    ->         END IF;
+    ->         
+    ->     END LOOP merge_loop;
+    ->     
+    ->     -- Close cursor
+    ->     CLOSE cur_new_rollcall;
+    ->     
+    ->     -- Display final results
+    ->     SELECT 'Final O_RollCall table contents:' AS Message;
+    ->     SELECT * FROM O_RollCall ORDER BY Roll_no;
+    ->     
+    -> END //
+Query OK, 0 rows affected (0.03 sec)
+
+mysql> 
+mysql> DELIMITER ;
+mysql> 
+mysql> 
+mysql> 
+mysql> 
+mysql> CALL Merge_RollCall('FY-CS', 'A');
++----------------------------------+
+| Message                          |
++----------------------------------+
+| Final O_RollCall table contents: |
++----------------------------------+
+1 row in set (0.00 sec)
+
++---------+----------------+--------+----------+--------+
+| Roll_no | Name           | Class  | Division | Status |
++---------+----------------+--------+----------+--------+
+|     101 | Rajesh Kumar   | FY-BSc | A        | P      |
+|     102 | Priya Sharma   | FY-BSc | B        | P      |
+|     103 | Amit Patel     | FY-BSc | A        | A      |
+|     104 | Neha Verma     | FY-BSc | B        | P      |
+|     105 | Suresh Reddy   | FY-BSc | A        | P      |
+|     106 | Deepa Malhotra | FY-BSc | B        | A      |
++---------+----------------+--------+----------+--------+
+6 rows in set (0.00 sec)
+
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> CALL Merge_RollCall('FY-CS', 'B');
++----------------------------------+
+| Message                          |
++----------------------------------+
+| Final O_RollCall table contents: |
++----------------------------------+
+1 row in set (0.00 sec)
+
++---------+----------------+--------+----------+--------+
+| Roll_no | Name           | Class  | Division | Status |
++---------+----------------+--------+----------+--------+
+|     101 | Rajesh Kumar   | FY-BSc | A        | P      |
+|     102 | Priya Sharma   | FY-BSc | B        | P      |
+|     103 | Amit Patel     | FY-BSc | A        | A      |
+|     104 | Neha Verma     | FY-BSc | B        | P      |
+|     105 | Suresh Reddy   | FY-BSc | A        | P      |
+|     106 | Deepa Malhotra | FY-BSc | B        | A      |
++---------+----------------+--------+----------+--------+
+6 rows in set (0.00 sec)
+
+Query OK, 0 rows affected (0.00 sec)
+
+
+
+
+
+
+
+mysql> 
+mysql> DELIMITER ;
+mysql> 
+mysql> 
+mysql> DELIMITER //
+mysql> 
+mysql> CREATE PROCEDURE Check_RollCall_Status()
+    -> BEGIN
+    ->     DECLARE rows_affected INT;
+    ->     
+    ->     -- Update records and store number of affected rows
+    ->     UPDATE O_RollCall SET Status = 'A' WHERE Status IS NULL;
+    ->     
+    ->     -- Get number of affected rows
+    ->     SET rows_affected = ROW_COUNT();
+    ->     
+    ->     -- Display message based on affected rows
+    ->     IF rows_affected > 0 THEN
+    ->         SELECT CONCAT(rows_affected, ' records updated') AS Message;
+    ->     ELSE
+    ->         SELECT 'No records needed updating' AS Message;
+    ->     END IF;
+    -> END //
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> 
+mysql> DELIMITER ;
+mysql> 
+mysql> 
+mysql> INSERT INTO O_RollCall (Roll_no, Name, Class, Division, Status) VALUES
+    -> (401, 'Rahul Sharma', 'FY-BSc', 'A', NULL),
+    -> (402, 'Priya Patel', 'FY-BSc', 'B', NULL),
+    -> (403, 'Amit Kumar', 'FY-BSc', 'A', NULL);
+Query OK, 3 rows affected (0.00 sec)
+Records: 3  Duplicates: 0  Warnings: 0
+
+mysql> CALL Check_RollCall_Status();
++-------------------+
+| Message           |
++-------------------+
+| 3 records updated |
++-------------------+
+1 row in set (0.01 sec)
+
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> SELECT * FROM O_RollCall WHERE Roll_no IN (401, 402, 403);
++---------+--------------+--------+----------+--------+
+| Roll_no | Name         | Class  | Division | Status |
++---------+--------------+--------+----------+--------+
+|     401 | Rahul Sharma | FY-BSc | A        | A      |
+|     402 | Priya Patel  | FY-BSc | B        | A      |
+|     403 | Amit Kumar   | FY-BSc | A        | A      |
++---------+--------------+--------+----------+--------+
+3 rows in set (0.00 sec)
+
+mysql> 
+mysql> 
+mysql> 
+mysql> 
+mysql> DELIMITER //
+mysql> 
+mysql> CREATE PROCEDURE Merge_RollCall_Complete(
+    ->     IN p_class VARCHAR(20),
+    ->     IN p_division CHAR(1)
+    -> )
+    -> BEGIN
+    ->     -- 1. IMPLICIT CURSOR
+    ->     -- First, let's count total records to be processed
+    ->     DECLARE v_total_records INT;
+    ->     SELECT COUNT(*) INTO v_total_records 
+    ->     FROM N_RollCall 
+    ->     WHERE Class = p_class AND Division = p_division;
+    ->     
+    ->     -- Display count using implicit cursor results
+    ->     SELECT CONCAT('Total records to process: ', v_total_records) AS Message;
+    -> 
+    ->     -- 2. EXPLICIT CURSOR
+    ->     -- Declare variables for explicit cursor
+    ->     DECLARE v_roll_no INT;
+    ->     DECLARE v_name VARCHAR(50);
+    ->     DECLARE v_status CHAR(1);
+    ->     DECLARE v_finished INT DEFAULT 0;
+    ->     
+    ->     -- Declare explicit cursor for checking duplicate records
+    ->     DECLARE cur_check_duplicates CURSOR FOR 
+    ->         SELECT Roll_no, Name, Status 
+    ->         FROM N_RollCall 
+    ->         WHERE Roll_no IN (
+    ->             SELECT n.Roll_no 
+    ->             FROM N_RollCall n 
+    ->             JOIN O_RollCall o ON n.Roll_no = o.Roll_no
+    ->             WHERE n.Class = p_class AND n.Division = p_division
+    ->         );
+    ->     
+    ->     -- Declare handler for explicit cursor
+    ->     DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_finished = 0;
+    ->     
+    ->     -- Open and use explicit cursor to report duplicates
+    ->     OPEN cur_check_duplicates;
+    ->     check_duplicates: LOOP
+    ->         FETCH cur_check_duplicates INTO v_roll_no, v_name, v_status;
+    ->         IF v_finished = 1 THEN
+    ->             LEAVE check_duplicates;
+    ->         END IF;
+    ->         SELECT CONCAT('Duplicate record found for: ', v_name) AS Message;
+    ->     END LOOP;
+    ->     CLOSE cur_check_duplicates;
+    -> 
+    ->     -- 3. CURSOR FOR LOOP (Using alternative syntax)
+    ->     -- This cursor will update any existing records that need status updates
+    ->     FOR update_record IN (
+    ->         SELECT n.Roll_no, n.Status 
+    ->         FROM N_RollCall n 
+    ->         JOIN O_RollCall o ON n.Roll_no = o.Roll_no 
+    ->         WHERE n.Status != o.Status 
+    ->         AND n.Class = p_class 
+    ->         AND n.Division = p_division
+    ->     ) DO
+    ->         UPDATE O_RollCall 
+    ->         SET Status = update_record.Status 
+    ->         WHERE Roll_no = update_record.Roll_no;
+    ->         
+    ->         SELECT CONCAT('Updated status for Roll No: ', update_record.Roll_no) AS Message;
+    ->     END FOR;
+    -> 
+    ->     -- 4. PARAMETERIZED CURSOR (Your existing implementation)
+    ->     -- Declare variables
+    ->     DECLARE v_exists INT;
+    ->     SET v_finished = 0;
+    ->     
+    ->     -- Declare parameterized cursor
+    ->     DECLARE cur_new_rollcall CURSOR FOR 
+    ->         SELECT Roll_no, Name, Status 
+    ->         FROM N_RollCall 
+    ->         WHERE Class = p_class 
+    ->         AND Division = p_division;
+    ->     
+    ->     -- Declare handler for cursor
+    ->     DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_finished = 1;
+    ->     
+    ->     -- Open cursor
+    ->     OPEN cur_new_rollcall;
+    ->     
+    ->     merge_loop: LOOP
+    ->         -- Fetch records from cursor
+    ->         FETCH cur_new_rollcall INTO v_roll_no, v_name, v_status;
+    ->         
+    ->         IF v_finished = 1 THEN
+    ->             LEAVE merge_loop;
+    ->         END IF;
+    ->         
+    ->         -- Check if record exists in O_RollCall
+    ->         SELECT COUNT(*) INTO v_exists 
+    ->         FROM O_RollCall 
+    ->         WHERE Roll_no = v_roll_no;
+    ->         
+    ->         -- Insert only if record doesn't exist
+    ->         IF v_exists = 0 THEN
+    ->             INSERT INTO O_RollCall (Roll_no, Name, Class, Division, Status)
+    ->             VALUES (v_roll_no, v_name, p_class, p_division, v_status);
+    ->             
+    ->             SELECT CONCAT('Inserted new record for student: ', v_name) AS Message;
+    ->         ELSE
+    ->             SELECT CONCAT('Skipped existing record for student: ', v_name) AS Message;
+    ->         END IF;
+    ->         
+    ->     END LOOP merge_loop;
+    ->     
+    ->     -- Close cursor
+    ->     CLOSE cur_new_rollcall;
+    ->     
+    ->     -- Display final results
+    ->     SELECT 'Final O_RollCall table contents:' AS Message;
+    ->     SELECT * FROM O_RollCall ORDER BY Roll_no;
+    ->     
+    -> END //
+ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'DECLARE v_roll_no INT;
+    DECLARE v_name VARCHAR(50);
+    DECLARE v_status CHAR' at line 18
+mysql> 
+mysql> DELIMITER ;
+mysql> 
+mysql> 
+mysql> DELIMITER //
+mysql> 
+mysql> CREATE PROCEDURE Merge_RollCall_Complete(
+    ->     IN p_class VARCHAR(20),
+    ->     IN p_division CHAR(1)
+    -> )
+    -> BEGIN
+    ->     -- Declare all variables first
+    ->     DECLARE v_total_records INT;
+    ->     DECLARE v_roll_no INT;
+    ->     DECLARE v_name VARCHAR(50);
+    ->     DECLARE v_status CHAR(1);
+    ->     DECLARE v_finished INT DEFAULT 0;
+    ->     DECLARE v_exists INT;
+    ->     
+    ->     -- Declare cursors
+    ->     DECLARE cur_check_duplicates CURSOR FOR 
+    ->         SELECT Roll_no, Name, Status 
+    ->         FROM N_RollCall 
+    ->         WHERE Roll_no IN (
+    ->             SELECT n.Roll_no 
+    ->             FROM N_RollCall n 
+    ->             JOIN O_RollCall o ON n.Roll_no = o.Roll_no
+    ->             WHERE n.Class = p_class AND n.Division = p_division
+    ->         );
+    ->         
+    ->     DECLARE cur_new_rollcall CURSOR FOR 
+    ->         SELECT Roll_no, Name, Status 
+    ->         FROM N_RollCall 
+    ->         WHERE Class = p_class 
+    ->         AND Division = p_division;
+    ->     
+    ->     -- Declare handlers
+    ->     DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_finished = 1;
+    ->     
+    ->     -- 1. IMPLICIT CURSOR
+    ->     SELECT COUNT(*) INTO v_total_records 
+    ->     FROM N_RollCall 
+    ->     WHERE Class = p_class AND Division = p_division;
+    ->     
+    ->     SELECT CONCAT('Total records to process: ', v_total_records) AS Message;
+    -> 
+    ->     -- 2. EXPLICIT CURSOR
+    ->     SET v_finished = 0;
+    ->     OPEN cur_check_duplicates;
+    ->     check_duplicates: LOOP
+    ->         FETCH cur_check_duplicates INTO v_roll_no, v_name, v_status;
+    ->         IF v_finished = 1 THEN
+    ->             LEAVE check_duplicates;
+    ->         END IF;
+    ->         SELECT CONCAT('Duplicate record found for: ', v_name) AS Message;
+    ->     END LOOP;
+    ->     CLOSE cur_check_duplicates;
+    -> 
+    ->     -- 3. CURSOR FOR LOOP with UPDATE
+    ->     UPDATE O_RollCall o
+    ->     JOIN N_RollCall n ON o.Roll_no = n.Roll_no
+    ->     SET o.Status = n.Status
+    ->     WHERE n.Class = p_class 
+    ->     AND n.Division = p_division
+    ->     AND n.Status != o.Status;
+    ->     
+    ->     SELECT CONCAT('Updated status for ', ROW_COUNT(), ' records') AS Message;
+    -> 
+    ->     -- 4. PARAMETERIZED CURSOR
+    ->     SET v_finished = 0;
+    ->     OPEN cur_new_rollcall;
+    ->     
+    ->     merge_loop: LOOP
+    ->         FETCH cur_new_rollcall INTO v_roll_no, v_name, v_status;
+    ->         
+    ->         IF v_finished = 1 THEN
+    ->             LEAVE merge_loop;
+    ->         END IF;
+    ->         
+    ->         -- Check if record exists in O_RollCall
+    ->         SELECT COUNT(*) INTO v_exists 
+    ->         FROM O_RollCall 
+    ->         WHERE Roll_no = v_roll_no;
+    ->         
+    ->         -- Insert only if record doesn't exist
+    ->         IF v_exists = 0 THEN
+    ->             INSERT INTO O_RollCall (Roll_no, Name, Class, Division, Status)
+    ->             VALUES (v_roll_no, v_name, p_class, p_division, v_status);
+    ->             
+    ->             SELECT CONCAT('Inserted new record for student: ', v_name) AS Message;
+    ->         ELSE
+    ->             SELECT CONCAT('Skipped existing record for student: ', v_name) AS Message;
+    ->         END IF;
+    ->     END LOOP merge_loop;
+    ->     
+    ->     CLOSE cur_new_rollcall;
+    ->     
+    ->     -- Display final results
+    ->     SELECT 'Final O_RollCall table contents:' AS Message;
+    ->     SELECT * FROM O_RollCall ORDER BY Roll_no;
+    ->     
+    -> END //
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> 
+mysql> DELIMITER ;
+mysql> 
+mysql> 
+mysql> CALL Merge_RollCall_Complete('FY-BSc', 'A');
++-----------------------------+
+| Message                     |
++-----------------------------+
+| Total records to process: 4 |
++-----------------------------+
+1 row in set (0.01 sec)
+
++----------------------------------------+
+| Message                                |
++----------------------------------------+
+| Duplicate record found for: Amit Patel |
++----------------------------------------+
+1 row in set (0.01 sec)
+
++------------------------------+
+| Message                      |
++------------------------------+
+| Updated status for 1 records |
++------------------------------+
+1 row in set (0.02 sec)
+
++-------------------------------------------------+
+| Message                                         |
++-------------------------------------------------+
+| Skipped existing record for student: Amit Patel |
++-------------------------------------------------+
+1 row in set (0.03 sec)
+
++---------------------------------------------+
+| Message                                     |
++---------------------------------------------+
+| Inserted new record for student: Arun Gupta |
++---------------------------------------------+
+1 row in set (0.03 sec)
+
++-----------------------------------------------+
+| Message                                       |
++-----------------------------------------------+
+| Inserted new record for student: Karthik Iyer |
++-----------------------------------------------+
+1 row in set (0.03 sec)
+
++-----------------------------------------------+
+| Message                                       |
++-----------------------------------------------+
+| Inserted new record for student: Rahul Kapoor |
++-----------------------------------------------+
+1 row in set (0.03 sec)
+
++----------------------------------+
+| Message                          |
++----------------------------------+
+| Final O_RollCall table contents: |
++----------------------------------+
+1 row in set (0.03 sec)
+
++---------+----------------+--------+----------+--------+
+| Roll_no | Name           | Class  | Division | Status |
++---------+----------------+--------+----------+--------+
+|     101 | Rajesh Kumar   | FY-BSc | A        | P      |
+|     102 | Priya Sharma   | FY-BSc | B        | P      |
+|     103 | Amit Patel     | FY-BSc | A        | P      |
+|     104 | Neha Verma     | FY-BSc | B        | P      |
+|     105 | Suresh Reddy   | FY-BSc | A        | P      |
+|     106 | Deepa Malhotra | FY-BSc | B        | A      |
+|     107 | Arun Gupta     | FY-BSc | A        | P      |
+|     109 | Karthik Iyer   | FY-BSc | A        | A      |
+|     111 | Rahul Kapoor   | FY-BSc | A        | P      |
+|     401 | Rahul Sharma   | FY-BSc | A        | A      |
+|     402 | Priya Patel    | FY-BSc | B        | A      |
+|     403 | Amit Kumar     | FY-BSc | A        | A      |
++---------+----------------+--------+----------+--------+
+12 rows in set (0.03 sec)
+
+Query OK, 0 rows affected (0.03 sec)
+
+mysql> 
+

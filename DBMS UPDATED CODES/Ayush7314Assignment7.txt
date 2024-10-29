@@ -1,0 +1,512 @@
+mysql> CREATE TABLE Library (
+    ->     book_id INT PRIMARY KEY,
+    ->     title VARCHAR(100),
+    ->     author VARCHAR(50),
+    ->     publisher VARCHAR(50),
+    ->     price DECIMAL(10,2),
+    ->     quantity INT,
+    ->     department VARCHAR(50),
+    ->     purchase_date DATE
+    -> );
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> CREATE TABLE Library_Audit (
+    ->     audit_id INT PRIMARY KEY AUTO_INCREMENT,
+    ->     book_id INT,
+    ->     title VARCHAR(100),
+    ->     author VARCHAR(50),
+    ->     publisher VARCHAR(50),
+    ->     price DECIMAL(10,2),
+    ->     quantity INT,
+    ->     department VARCHAR(50),
+    ->     purchase_date DATE,
+    ->     action_type VARCHAR(20),
+    ->     action_date TIMESTAMP,
+    ->     action_by VARCHAR(50)
+    -> );
+Query OK, 0 rows affected (0.03 sec)
+
+mysql> DESC Library;
++---------------+---------------+------+-----+---------+-------+
+| Field         | Type          | Null | Key | Default | Extra |
++---------------+---------------+------+-----+---------+-------+
+| book_id       | int           | NO   | PRI | NULL    |       |
+| title         | varchar(100)  | YES  |     | NULL    |       |
+| author        | varchar(50)   | YES  |     | NULL    |       |
+| publisher     | varchar(50)   | YES  |     | NULL    |       |
+| price         | decimal(10,2) | YES  |     | NULL    |       |
+| quantity      | int           | YES  |     | NULL    |       |
+| department    | varchar(50)   | YES  |     | NULL    |       |
+| purchase_date | date          | YES  |     | NULL    |       |
++---------------+---------------+------+-----+---------+-------+
+8 rows in set (0.00 sec)
+
+mysql> DESC Library_Audit;
++---------------+---------------+------+-----+---------+----------------+
+| Field         | Type          | Null | Key | Default | Extra          |
++---------------+---------------+------+-----+---------+----------------+
+| audit_id      | int           | NO   | PRI | NULL    | auto_increment |
+| book_id       | int           | YES  |     | NULL    |                |
+| title         | varchar(100)  | YES  |     | NULL    |                |
+| author        | varchar(50)   | YES  |     | NULL    |                |
+| publisher     | varchar(50)   | YES  |     | NULL    |                |
+| price         | decimal(10,2) | YES  |     | NULL    |                |
+| quantity      | int           | YES  |     | NULL    |                |
+| department    | varchar(50)   | YES  |     | NULL    |                |
+| purchase_date | date          | YES  |     | NULL    |                |
+| action_type   | varchar(20)   | YES  |     | NULL    |                |
+| action_date   | timestamp     | YES  |     | NULL    |                |
+| action_by     | varchar(50)   | YES  |     | NULL    |                |
++---------------+---------------+------+-----+---------+----------------+
+12 rows in set (0.00 sec)
+
+mysql> INSERT INTO Library VALUES
+    -> (1001, 'Wings of Fire', 'A.P.J. Abdul Kalam', 'Universities Press', 299.00, 5, 'Biography', '2023-01-15'),
+    -> (1002, 'The Guide', 'R.K. Narayan', 'Penguin India', 199.00, 3, 'Fiction', '2023-02-20'),
+    -> (1003, 'Train to Pakistan', 'Khushwant Singh', 'Roli Books', 250.00, 4, 'Historical Fiction', '2023-03-10'),
+    -> (1004, 'Discovery of India', 'Jawaharlal Nehru', 'Oxford Press', 399.00, 2, 'History', '2023-04-05'),
+    -> (1005, 'Gitanjali', 'Rabindranath Tagore', 'Rupa Publications', 150.00, 6, 'Poetry', '2023-05-01');
+Query OK, 5 rows affected (0.02 sec)
+Records: 5  Duplicates: 0  Warnings: 0
+
+mysql> TRUNCATE TABLE Library;
+Query OK, 0 rows affected (0.04 sec)
+
+mysql> TRUNCATE TABLE Library_Audit;
+Query OK, 0 rows affected (0.04 sec)
+
+mysql> INSERT INTO Library VALUES
+    -> -- Academic Books
+    -> (101, 'Data Structures Using C', 'Dr. Reema Thareja', 'Oxford University Press', 450.00, 10, 'Computer Science', '2023-01-15'),
+    -> (102, 'Engineering Mathematics', 'Dr. B.S. Grewal', 'Khanna Publishers', 595.00, 15, 'Mathematics', '2023-02-20'),
+    -> (103, 'Organic Chemistry', 'Dr. P.L. Soni', 'Sultan Chand', 375.00, 8, 'Chemistry', '2023-03-10'),
+    -> 
+    -> -- Literature Books
+    -> (201, 'The God of Small Things', 'Arundhati Roy', 'Penguin India', 299.00, 5, 'Fiction', '2023-04-05'),
+    -> (202, 'Midnight\'s Children', 'Salman Rushdie', 'Random House India', 450.00, 3, 'Fiction', '2023-04-15'),
+    -> (203, 'The Inheritance of Loss', 'Kiran Desai', 'Penguin India', 350.00, 4, 'Fiction', '2023-05-01'),
+    -> 
+    -> -- Reference Books
+    -> (301, 'Indian Polity', 'M. Laxmikanth', 'McGraw Hill', 799.00, 12, 'Civil Services', '2023-05-15'),
+    -> (302, 'Indian Economy', 'Ramesh Singh', 'McGraw Hill', 725.00, 10, 'Economics', '2023-06-01'),
+    -> (303, 'Indian History', 'Bipin Chandra', 'Orient Blackswan', 550.00, 7, 'History', '2023-06-15'),
+    -> 
+    -> -- Research Journals
+    -> (401, 'Advanced Materials Research', 'Dr. K.R. Rao', 'IIT Delhi Press', 1200.00, 2, 'Material Science', '2023-07-01'),
+    -> (402, 'Indian Journal of AI', 'Dr. Pushpak Bhattacharyya', 'IIT Bombay Press', 950.00, 3, 'Computer Science', '2023-07-15');
+Query OK, 11 rows affected (0.02 sec)
+Records: 11  Duplicates: 0  Warnings: 0
+
+mysql> INSERT INTO Library_Audit VALUES
+    -> (1, 101, 'Data Structures Using C', 'Dr. Reema Thareja', 'Oxford University Press', 400.00, 8, 'Computer Science', '2023-01-15', 'UPDATE', '2023-08-01 10:15:00', 'SYSTEM'),
+    -> (2, 302, 'Indian Economy', 'Ramesh Singh', 'McGraw Hill', 695.00, 8, 'Economics', '2023-06-01', 'UPDATE', '2023-08-02 11:30:00', 'SYSTEM'),
+    -> (3, 203, 'The Inheritance of Loss', 'Kiran Desai', 'Penguin India', 350.00, 4, 'Fiction', '2023-05-01', 'DELETE', '2023-08-03 14:20:00', 'SYSTEM');
+Query OK, 3 rows affected (0.02 sec)
+Records: 3  Duplicates: 0  Warnings: 0
+
+mysql> SELECT * FROM Library ORDER BY book_id;
++---------+-----------------------------+---------------------------+-------------------------+---------+----------+------------------+---------------+
+| book_id | title                       | author                    | publisher               | price   | quantity | department       | purchase_date |
++---------+-----------------------------+---------------------------+-------------------------+---------+----------+------------------+---------------+
+|     101 | Data Structures Using C     | Dr. Reema Thareja         | Oxford University Press |  450.00 |       10 | Computer Science | 2023-01-15    |
+|     102 | Engineering Mathematics     | Dr. B.S. Grewal           | Khanna Publishers       |  595.00 |       15 | Mathematics      | 2023-02-20    |
+|     103 | Organic Chemistry           | Dr. P.L. Soni             | Sultan Chand            |  375.00 |        8 | Chemistry        | 2023-03-10    |
+|     201 | The God of Small Things     | Arundhati Roy             | Penguin India           |  299.00 |        5 | Fiction          | 2023-04-05    |
+|     202 | Midnight's Children         | Salman Rushdie            | Random House India      |  450.00 |        3 | Fiction          | 2023-04-15    |
+|     203 | The Inheritance of Loss     | Kiran Desai               | Penguin India           |  350.00 |        4 | Fiction          | 2023-05-01    |
+|     301 | Indian Polity               | M. Laxmikanth             | McGraw Hill             |  799.00 |       12 | Civil Services   | 2023-05-15    |
+|     302 | Indian Economy              | Ramesh Singh              | McGraw Hill             |  725.00 |       10 | Economics        | 2023-06-01    |
+|     303 | Indian History              | Bipin Chandra             | Orient Blackswan        |  550.00 |        7 | History          | 2023-06-15    |
+|     401 | Advanced Materials Research | Dr. K.R. Rao              | IIT Delhi Press         | 1200.00 |        2 | Material Science | 2023-07-01    |
+|     402 | Indian Journal of AI        | Dr. Pushpak Bhattacharyya | IIT Bombay Press        |  950.00 |        3 | Computer Science | 2023-07-15    |
++---------+-----------------------------+---------------------------+-------------------------+---------+----------+------------------+---------------+
+11 rows in set (0.00 sec)
+
+mysql> SELECT * FROM Library_Audit ORDER BY audit_id;
++----------+---------+-------------------------+-------------------+-------------------------+--------+----------+------------------+---------------+-------------+---------------------+-----------+
+| audit_id | book_id | title                   | author            | publisher               | price  | quantity | department       | purchase_date | action_type | action_date         | action_by |
++----------+---------+-------------------------+-------------------+-------------------------+--------+----------+------------------+---------------+-------------+---------------------+-----------+
+|        1 |     101 | Data Structures Using C | Dr. Reema Thareja | Oxford University Press | 400.00 |        8 | Computer Science | 2023-01-15    | UPDATE      | 2023-08-01 10:15:00 | SYSTEM    |
+|        2 |     302 | Indian Economy          | Ramesh Singh      | McGraw Hill             | 695.00 |        8 | Economics        | 2023-06-01    | UPDATE      | 2023-08-02 11:30:00 | SYSTEM    |
+|        3 |     203 | The Inheritance of Loss | Kiran Desai       | Penguin India           | 350.00 |        4 | Fiction          | 2023-05-01    | DELETE      | 2023-08-03 14:20:00 | SYSTEM    |
++----------+---------+-------------------------+-------------------+-------------------------+--------+----------+------------------+---------------+-------------+---------------------+-----------+
+3 rows in set (0.00 sec)
+
+mysql> UPDATE Library 
+    -> SET price = 349.00, quantity = 8 
+    -> WHERE book_id = 1001;
+Query OK, 0 rows affected (0.00 sec)
+Rows matched: 0  Changed: 0  Warnings: 0
+
+mysql> SELECT * FROM Library_Audit;
++----------+---------+-------------------------+-------------------+-------------------------+--------+----------+------------------+---------------+-------------+---------------------+-----------+
+| audit_id | book_id | title                   | author            | publisher               | price  | quantity | department       | purchase_date | action_type | action_date         | action_by |
++----------+---------+-------------------------+-------------------+-------------------------+--------+----------+------------------+---------------+-------------+---------------------+-----------+
+|        1 |     101 | Data Structures Using C | Dr. Reema Thareja | Oxford University Press | 400.00 |        8 | Computer Science | 2023-01-15    | UPDATE      | 2023-08-01 10:15:00 | SYSTEM    |
+|        2 |     302 | Indian Economy          | Ramesh Singh      | McGraw Hill             | 695.00 |        8 | Economics        | 2023-06-01    | UPDATE      | 2023-08-02 11:30:00 | SYSTEM    |
+|        3 |     203 | The Inheritance of Loss | Kiran Desai       | Penguin India           | 350.00 |        4 | Fiction          | 2023-05-01    | DELETE      | 2023-08-03 14:20:00 | SYSTEM    |
++----------+---------+-------------------------+-------------------+-------------------------+--------+----------+------------------+---------------+-------------+---------------------+-----------+
+3 rows in set (0.00 sec)
+
+mysql> DELIMITER //
+mysql> 
+mysql> CREATE TRIGGER before_library_delete
+    -> BEFORE DELETE ON Library
+    -> FOR EACH ROW
+    -> BEGIN
+    ->     INSERT INTO Library_Audit (
+    ->         book_id,
+    ->         title,
+    ->         author,
+    ->         publisher,
+    ->         price,
+    ->         quantity,
+    ->         department,
+    ->         purchase_date,
+    ->         action_type,
+    ->         action_date,
+    ->         action_by
+    ->     )
+    ->     VALUES (
+    ->         OLD.book_id,
+    ->         OLD.title,
+    ->         OLD.author,
+    ->         OLD.publisher,
+    ->         OLD.price,
+    ->         OLD.quantity,
+    ->         OLD.department,
+    ->         OLD.purchase_date,
+    ->         'DELETE',
+    ->         NOW(),
+    ->         CURRENT_USER()
+    ->     );
+    -> END //
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> 
+mysql> DELIMITER ;
+mysql> 
+mysql> 
+mysql> 
+mysql> DELETE FROM Library WHERE book_id = 201;
+Query OK, 1 row affected (0.02 sec)
+
+mysql> SELECT * FROM Library_Audit WHERE action_type = 'DELETE';
++----------+---------+-------------------------+---------------+---------------+--------+----------+------------+---------------+-------------+---------------------+----------------+
+| audit_id | book_id | title                   | author        | publisher     | price  | quantity | department | purchase_date | action_type | action_date         | action_by      |
++----------+---------+-------------------------+---------------+---------------+--------+----------+------------+---------------+-------------+---------------------+----------------+
+|        3 |     203 | The Inheritance of Loss | Kiran Desai   | Penguin India | 350.00 |        4 | Fiction    | 2023-05-01    | DELETE      | 2023-08-03 14:20:00 | SYSTEM         |
+|        4 |     201 | The God of Small Things | Arundhati Roy | Penguin India | 299.00 |        5 | Fiction    | 2023-04-05    | DELETE      | 2024-10-28 13:36:23 | root@localhost |
++----------+---------+-------------------------+---------------+---------------+--------+----------+------------+---------------+-------------+---------------------+----------------+
+2 rows in set (0.00 sec)
+
+mysql> 
+mysql> DELIMITER //
+mysql> 
+mysql> CREATE TRIGGER after_library_update
+    -> AFTER UPDATE ON Library
+    -> FOR EACH ROW
+    -> BEGIN
+    ->     -- Log modifications to quantity or price
+    ->     IF OLD.quantity != NEW.quantity OR OLD.price != NEW.price THEN
+    ->         INSERT INTO Library_Audit (
+    ->             book_id,
+    ->             title,
+    ->             author,
+    ->             publisher,
+    ->             price,
+    ->             quantity,
+    ->             department,
+    ->             purchase_date,
+    ->             action_type,
+    ->             action_date,
+    ->             action_by
+    ->         )
+    ->         VALUES (
+    ->             NEW.book_id,
+    ->             NEW.title,
+    ->             NEW.author,
+    ->             NEW.publisher,
+    ->             NEW.price,
+    ->             NEW.quantity,
+    ->             NEW.department,
+    ->             NEW.purchase_date,
+    ->             'PRICE_QTY_CHANGE',
+    ->             NOW(),
+    ->             CURRENT_USER()
+    ->         );
+    ->     END IF;
+    -> END //
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> 
+mysql> DELIMITER ;
+mysql> 
+mysql> 
+mysql> 
+mysql> -- First create a summary table
+mysql> CREATE TABLE Library_Summary_Audit (
+    ->     audit_id INT PRIMARY KEY AUTO_INCREMENT,
+    ->     action_type VARCHAR(20),
+    ->     records_affected INT,
+    ->     total_value_change DECIMAL(10,2),
+    ->     action_date TIMESTAMP,
+    ->     action_by VARCHAR(50)
+    -> );
+Query OK, 0 rows affected (0.03 sec)
+
+mysql> 
+mysql> -- Create Statement-level trigger
+mysql> DELIMITER //
+mysql> 
+mysql> CREATE TRIGGER after_library_update_statement
+    -> AFTER UPDATE ON Library
+    -> FOR EACH ROW
+    -> BEGIN
+    ->     -- Calculate total value change
+    ->     INSERT INTO Library_Summary_Audit (
+    ->         action_type,
+    ->         records_affected,
+    ->         total_value_change,
+    ->         action_date,
+    ->         action_by
+    ->     )
+    ->     VALUES (
+    ->         'BATCH_UPDATE',
+    ->         ROW_COUNT(),
+    ->         (NEW.price * NEW.quantity) - (OLD.price * OLD.quantity),
+    ->         NOW(),
+    ->         CURRENT_USER()
+    ->     );
+    -> END //
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> 
+mysql> DELIMITER ;
+mysql> 
+mysql> 
+mysql> 
+mysql> UPDATE Library 
+    -> SET price = price * 1.1 
+    -> WHERE department = 'Computer Science';
+Query OK, 2 rows affected (0.02 sec)
+Rows matched: 2  Changed: 2  Warnings: 0
+
+mysql> 
+mysql> 
+mysql> 
+mysql> 
+mysql> SELECT * FROM Library_Audit ORDER BY audit_id DESC LIMIT 5;
++----------+---------+-------------------------+---------------------------+-------------------------+---------+----------+------------------+---------------+------------------+---------------------+----------------+
+| audit_id | book_id | title                   | author                    | publisher               | price   | quantity | department       | purchase_date | action_type      | action_date         | action_by      |
++----------+---------+-------------------------+---------------------------+-------------------------+---------+----------+------------------+---------------+------------------+---------------------+----------------+
+|        6 |     402 | Indian Journal of AI    | Dr. Pushpak Bhattacharyya | IIT Bombay Press        | 1045.00 |        3 | Computer Science | 2023-07-15    | PRICE_QTY_CHANGE | 2024-10-28 13:36:46 | root@localhost |
+|        5 |     101 | Data Structures Using C | Dr. Reema Thareja         | Oxford University Press |  495.00 |       10 | Computer Science | 2023-01-15    | PRICE_QTY_CHANGE | 2024-10-28 13:36:46 | root@localhost |
+|        4 |     201 | The God of Small Things | Arundhati Roy             | Penguin India           |  299.00 |        5 | Fiction          | 2023-04-05    | DELETE           | 2024-10-28 13:36:23 | root@localhost |
+|        3 |     203 | The Inheritance of Loss | Kiran Desai               | Penguin India           |  350.00 |        4 | Fiction          | 2023-05-01    | DELETE           | 2023-08-03 14:20:00 | SYSTEM         |
+|        2 |     302 | Indian Economy          | Ramesh Singh              | McGraw Hill             |  695.00 |        8 | Economics        | 2023-06-01    | UPDATE           | 2023-08-02 11:30:00 | SYSTEM         |
++----------+---------+-------------------------+---------------------------+-------------------------+---------+----------+------------------+---------------+------------------+---------------------+----------------+
+5 rows in set (0.00 sec)
+
+mysql> SELECT * FROM Library_Summary_Audit ORDER BY audit_id DESC LIMIT 5;
++----------+--------------+------------------+--------------------+---------------------+----------------+
+| audit_id | action_type  | records_affected | total_value_change | action_date         | action_by      |
++----------+--------------+------------------+--------------------+---------------------+----------------+
+|        2 | BATCH_UPDATE |                1 |             285.00 | 2024-10-28 13:36:46 | root@localhost |
+|        1 | BATCH_UPDATE |                1 |             450.00 | 2024-10-28 13:36:46 | root@localhost |
++----------+--------------+------------------+--------------------+---------------------+----------------+
+2 rows in set (0.00 sec)
+
+mysql> SELECT * FROM Library\G
+*************************** 1. row ***************************
+      book_id: 101
+        title: Data Structures Using C
+       author: Dr. Reema Thareja
+    publisher: Oxford University Press
+        price: 495.00
+     quantity: 10
+   department: Computer Science
+purchase_date: 2023-01-15
+*************************** 2. row ***************************
+      book_id: 102
+        title: Engineering Mathematics
+       author: Dr. B.S. Grewal
+    publisher: Khanna Publishers
+        price: 595.00
+     quantity: 15
+   department: Mathematics
+purchase_date: 2023-02-20
+*************************** 3. row ***************************
+      book_id: 103
+        title: Organic Chemistry
+       author: Dr. P.L. Soni
+    publisher: Sultan Chand
+        price: 375.00
+     quantity: 8
+   department: Chemistry
+purchase_date: 2023-03-10
+*************************** 4. row ***************************
+      book_id: 202
+        title: Midnight's Children
+       author: Salman Rushdie
+    publisher: Random House India
+        price: 450.00
+     quantity: 3
+   department: Fiction
+purchase_date: 2023-04-15
+*************************** 5. row ***************************
+      book_id: 203
+        title: The Inheritance of Loss
+       author: Kiran Desai
+    publisher: Penguin India
+        price: 350.00
+     quantity: 4
+   department: Fiction
+purchase_date: 2023-05-01
+*************************** 6. row ***************************
+      book_id: 301
+        title: Indian Polity
+       author: M. Laxmikanth
+    publisher: McGraw Hill
+        price: 799.00
+     quantity: 12
+   department: Civil Services
+purchase_date: 2023-05-15
+*************************** 7. row ***************************
+      book_id: 302
+        title: Indian Economy
+       author: Ramesh Singh
+    publisher: McGraw Hill
+        price: 725.00
+     quantity: 10
+   department: Economics
+purchase_date: 2023-06-01
+*************************** 8. row ***************************
+      book_id: 303
+        title: Indian History
+       author: Bipin Chandra
+    publisher: Orient Blackswan
+        price: 550.00
+     quantity: 7
+   department: History
+purchase_date: 2023-06-15
+*************************** 9. row ***************************
+      book_id: 401
+        title: Advanced Materials Research
+       author: Dr. K.R. Rao
+    publisher: IIT Delhi Press
+        price: 1200.00
+     quantity: 2
+   department: Material Science
+purchase_date: 2023-07-01
+*************************** 10. row ***************************
+      book_id: 402
+        title: Indian Journal of AI
+       author: Dr. Pushpak Bhattacharyya
+    publisher: IIT Bombay Press
+        price: 1045.00
+     quantity: 3
+   department: Computer Science
+purchase_date: 2023-07-15
+10 rows in set (0.00 sec)
+
+mysql> SELECT * FROM Library_Audit\G
+*************************** 1. row ***************************
+     audit_id: 1
+      book_id: 101
+        title: Data Structures Using C
+       author: Dr. Reema Thareja
+    publisher: Oxford University Press
+        price: 400.00
+     quantity: 8
+   department: Computer Science
+purchase_date: 2023-01-15
+  action_type: UPDATE
+  action_date: 2023-08-01 10:15:00
+    action_by: SYSTEM
+*************************** 2. row ***************************
+     audit_id: 2
+      book_id: 302
+        title: Indian Economy
+       author: Ramesh Singh
+    publisher: McGraw Hill
+        price: 695.00
+     quantity: 8
+   department: Economics
+purchase_date: 2023-06-01
+  action_type: UPDATE
+  action_date: 2023-08-02 11:30:00
+    action_by: SYSTEM
+*************************** 3. row ***************************
+     audit_id: 3
+      book_id: 203
+        title: The Inheritance of Loss
+       author: Kiran Desai
+    publisher: Penguin India
+        price: 350.00
+     quantity: 4
+   department: Fiction
+purchase_date: 2023-05-01
+  action_type: DELETE
+  action_date: 2023-08-03 14:20:00
+    action_by: SYSTEM
+*************************** 4. row ***************************
+     audit_id: 4
+      book_id: 201
+        title: The God of Small Things
+       author: Arundhati Roy
+    publisher: Penguin India
+        price: 299.00
+     quantity: 5
+   department: Fiction
+purchase_date: 2023-04-05
+  action_type: DELETE
+  action_date: 2024-10-28 13:36:23
+    action_by: root@localhost
+*************************** 5. row ***************************
+     audit_id: 5
+      book_id: 101
+        title: Data Structures Using C
+       author: Dr. Reema Thareja
+    publisher: Oxford University Press
+        price: 495.00
+     quantity: 10
+   department: Computer Science
+purchase_date: 2023-01-15
+  action_type: PRICE_QTY_CHANGE
+  action_date: 2024-10-28 13:36:46
+    action_by: root@localhost
+*************************** 6. row ***************************
+     audit_id: 6
+      book_id: 402
+        title: Indian Journal of AI
+       author: Dr. Pushpak Bhattacharyya
+    publisher: IIT Bombay Press
+        price: 1045.00
+     quantity: 3
+   department: Computer Science
+purchase_date: 2023-07-15
+  action_type: PRICE_QTY_CHANGE
+  action_date: 2024-10-28 13:36:46
+    action_by: root@localhost
+6 rows in set (0.00 sec)
+
+mysql> SELECT * FROM Library_Summary_Audit\G
+*************************** 1. row ***************************
+          audit_id: 1
+       action_type: BATCH_UPDATE
+  records_affected: 1
+total_value_change: 450.00
+       action_date: 2024-10-28 13:36:46
+         action_by: root@localhost
+*************************** 2. row ***************************
+          audit_id: 2
+       action_type: BATCH_UPDATE
+  records_affected: 1
+total_value_change: 285.00
+       action_date: 2024-10-28 13:36:46
+         action_by: root@localhost
+2 rows in set (0.00 sec)
+
+mysql> 
+
