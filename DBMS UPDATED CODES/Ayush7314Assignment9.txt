@@ -1,0 +1,296 @@
+argus@pop-os:~$ sudo su
+[sudo] password for argus: 
+root@pop-os:/home/argus# mongosh
+Current Mongosh Log ID:	671f4d6f6decb819dcfe6910
+Connecting to:		mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+2.3.2
+Using MongoDB:		7.0.15
+Using Mongosh:		2.3.2
+
+For mongosh info see: https://www.mongodb.com/docs/mongodb-shell/
+
+------
+   The server generated these startup warnings when booting
+   2024-10-28T14:07:40.785+05:30: Using the XFS filesystem is strongly recommended with the WiredTiger storage engine. See http://dochub.mongodb.org/core/prodnotes-filesystem
+   2024-10-28T14:07:41.164+05:30: Access control is not enabled for the database. Read and write access to data and configuration is unrestricted
+------
+
+test> use studentDB 
+switched to db studentDB
+studentDB> db.student.insertOne({
+...     "roll_no": 1,
+...     "name": "amit",
+...     "addr": "Loni"
+... })
+{
+  acknowledged: true,
+  insertedId: ObjectId('671f4d806decb819dcfe6911')
+}
+studentDB> db.student.insertOne({
+...     "roll_no": 2,
+...     "name": "bashir",
+...     "addr": {
+...         "At": "Loni",
+...         "Tal": "Rahata",
+...         "Dist": "Ahemadnagar"
+...     }
+... })
+{
+  acknowledged: true,
+  insertedId: ObjectId('671f4d876decb819dcfe6912')
+}
+studentDB> db.student.insertOne({
+...     "roll_no": 11,
+...     "name": "sachin",
+...     "percent_marks": 60.23,
+...     "addr": "Pune"
+... })
+{
+  acknowledged: true,
+  insertedId: ObjectId('671f4d8d6decb819dcfe6913')
+}
+studentDB> db.student.insertOne({
+...     "name": "Rahul",
+...     "Address": "Kolhar"
+... })
+{
+  acknowledged: true,
+  insertedId: ObjectId('671f4d966decb819dcfe6914')
+}
+studentDB> db.student.find()
+[
+  {
+    _id: ObjectId('671f4d806decb819dcfe6911'),
+    roll_no: 1,
+    name: 'amit',
+    addr: 'Loni'
+  },
+  {
+    _id: ObjectId('671f4d876decb819dcfe6912'),
+    roll_no: 2,
+    name: 'bashir',
+    addr: { At: 'Loni', Tal: 'Rahata', Dist: 'Ahemadnagar' }
+  },
+  {
+    _id: ObjectId('671f4d8d6decb819dcfe6913'),
+    roll_no: 11,
+    name: 'sachin',
+    percent_marks: 60.23,
+    addr: 'Pune'
+  },
+  {
+    _id: ObjectId('671f4d966decb819dcfe6914'),
+    name: 'Rahul',
+    Address: 'Kolhar'
+  }
+]
+studentDB> db.student.find({}, {name: 1, _id: 0})
+[
+  { name: 'amit' },
+  { name: 'bashir' },
+  { name: 'sachin' },
+  { name: 'Rahul' }
+]
+studentDB> db.student.find().limit(5)
+[
+  {
+    _id: ObjectId('671f4d806decb819dcfe6911'),
+    roll_no: 1,
+    name: 'amit',
+    addr: 'Loni'
+  },
+  {
+    _id: ObjectId('671f4d876decb819dcfe6912'),
+    roll_no: 2,
+    name: 'bashir',
+    addr: { At: 'Loni', Tal: 'Rahata', Dist: 'Ahemadnagar' }
+  },
+  {
+    _id: ObjectId('671f4d8d6decb819dcfe6913'),
+    roll_no: 11,
+    name: 'sachin',
+    percent_marks: 60.23,
+    addr: 'Pune'
+  },
+  {
+    _id: ObjectId('671f4d966decb819dcfe6914'),
+    name: 'Rahul',
+    Address: 'Kolhar'
+  }
+]
+studentDB> db.student.find().skip(5)
+
+studentDB> db.student.find().skip(5)
+
+studentDB> db.student.find().skip(5).pretty()
+
+studentDB> db.student.countDocuments()
+4
+studentDB> db.student.find().skip(2)
+[
+  {
+    _id: ObjectId('671f4d8d6decb819dcfe6913'),
+    roll_no: 11,
+    name: 'sachin',
+    percent_marks: 60.23,
+    addr: 'Pune'
+  },
+  {
+    _id: ObjectId('671f4d966decb819dcfe6914'),
+    name: 'Rahul',
+    Address: 'Kolhar'
+  }
+]
+studentDB> db.student.find({roll_no: {$gt: 5, $lt: 10}})
+
+studentDB> db.student.find({roll_no: {$gt: 2, $lt: 10}})
+
+studentDB> db.student.find({roll_no: {$gt: 2, $lt: 3}})
+
+studentDB> db.student.find({
+...     $or: [
+...         {addr: "Loni"},
+...         {addr: "Pune"}
+...     ]
+... })
+[
+  {
+    _id: ObjectId('671f4d806decb819dcfe6911'),
+    roll_no: 1,
+    name: 'amit',
+    addr: 'Loni'
+  },
+  {
+    _id: ObjectId('671f4d8d6decb819dcfe6913'),
+    roll_no: 11,
+    name: 'sachin',
+    percent_marks: 60.23,
+    addr: 'Pune'
+  }
+]
+studentDB> db.student.find().sort({roll_no: 1})
+[
+  {
+    _id: ObjectId('671f4d966decb819dcfe6914'),
+    name: 'Rahul',
+    Address: 'Kolhar'
+  },
+  {
+    _id: ObjectId('671f4d806decb819dcfe6911'),
+    roll_no: 1,
+    name: 'amit',
+    addr: 'Loni'
+  },
+  {
+    _id: ObjectId('671f4d876decb819dcfe6912'),
+    roll_no: 2,
+    name: 'bashir',
+    addr: { At: 'Loni', Tal: 'Rahata', Dist: 'Ahemadnagar' }
+  },
+  {
+    _id: ObjectId('671f4d8d6decb819dcfe6913'),
+    roll_no: 11,
+    name: 'sachin',
+    percent_marks: 60.23,
+    addr: 'Pune'
+  }
+]
+studentDB> db.student.deleteMany({
+...     roll_no: {$lt: 8, $gt: 3}
+... })
+{ acknowledged: true, deletedCount: 0 }
+studentDB> db.student.deleteMany({addr: "Loni"})
+{ acknowledged: true, deletedCount: 1 }
+studentDB> db.student.save({
+...     _id: 10,
+...     name: "Ram",
+...     Address: "Pune",
+...     roll_no: 60
+... })
+TypeError: db.student.save is not a function
+studentDB> db.student.replaceOne(
+...     {_id: 10},
+...     {
+...         name: "Ram",
+...         Address: "Pune",
+...         roll_no: 60
+...     },
+...     {upsert: true}
+... )
+{
+  acknowledged: true,
+  insertedId: 10,
+  matchedCount: 0,
+  modifiedCount: 0,
+  upsertedCount: 1
+}
+studentDB> db.student.updateOne(
+...     {roll_no: 1},
+...     {
+...         $set: {
+...             addr: {
+...                 At: "Sangamner",
+...                 Tal: "Sangamner",
+...                 Dist: "Ahemadnagar"
+...             }
+...         }
+...     }
+... )
+{
+  acknowledged: true,
+  insertedId: null,
+  matchedCount: 0,
+  modifiedCount: 0,
+  upsertedCount: 0
+}
+studentDB> db.student.createIndex({roll_no: 1})
+roll_no_1
+studentDB> db.student.find()
+[
+  {
+    _id: ObjectId('671f4d876decb819dcfe6912'),
+    roll_no: 2,
+    name: 'bashir',
+    addr: { At: 'Loni', Tal: 'Rahata', Dist: 'Ahemadnagar' }
+  },
+  {
+    _id: ObjectId('671f4d8d6decb819dcfe6913'),
+    roll_no: 11,
+    name: 'sachin',
+    percent_marks: 60.23,
+    addr: 'Pune'
+  },
+  {
+    _id: ObjectId('671f4d966decb819dcfe6914'),
+    name: 'Rahul',
+    Address: 'Kolhar'
+  },
+  { _id: 10, name: 'Ram', Address: 'Pune', roll_no: 60 }
+]
+studentDB> db.student.find().pretty()
+[
+  {
+    _id: ObjectId('671f4d876decb819dcfe6912'),
+    roll_no: 2,
+    name: 'bashir',
+    addr: { At: 'Loni', Tal: 'Rahata', Dist: 'Ahemadnagar' }
+  },
+  {
+    _id: ObjectId('671f4d8d6decb819dcfe6913'),
+    roll_no: 11,
+    name: 'sachin',
+    percent_marks: 60.23,
+    addr: 'Pune'
+  },
+  {
+    _id: ObjectId('671f4d966decb819dcfe6914'),
+    name: 'Rahul',
+    Address: 'Kolhar'
+  },
+  { _id: 10, name: 'Ram', Address: 'Pune', roll_no: 60 }
+]
+studentDB> db.student.drop()
+true
+studentDB> db.student.find()
+
+studentDB> 
+

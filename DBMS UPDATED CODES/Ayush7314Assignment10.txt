@@ -1,0 +1,272 @@
+root@pop-os:/home/argus# mongosh
+Current Mongosh Log ID:	671f4eb779824cf7a1fe6910
+Connecting to:		mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+2.3.2
+Using MongoDB:		7.0.15
+Using Mongosh:		2.3.2
+
+For mongosh info see: https://www.mongodb.com/docs/mongodb-shell/
+
+------
+   The server generated these startup warnings when booting
+   2024-10-28T14:07:40.785+05:30: Using the XFS filesystem is strongly recommended with the WiredTiger storage engine. See http://dochub.mongodb.org/core/prodnotes-filesystem
+   2024-10-28T14:07:41.164+05:30: Access control is not enabled for the database. Read and write access to data and configuration is unrestricted
+------
+
+test> use employeeDB
+switched to db employeeDB
+employeeDB> db.employee.insert({"custID":"A123", "Amount":500, "status":"A"})
+DeprecationWarning: Collection.insert() is deprecated. Use insertOne, insertMany, or bulkWrite.
+{
+  acknowledged: true,
+  insertedIds: { '0': ObjectId('671f4f3f79824cf7a1fe6911') }
+}
+employeeDB> db.employee.insert({"custID":"A123", "Amount":250, "status":"A"})
+{
+  acknowledged: true,
+  insertedIds: { '0': ObjectId('671f4f3f79824cf7a1fe6912') }
+}
+employeeDB> db.employee.insert({"custID":"B212", "Amount":200, "status":"A"})
+{
+  acknowledged: true,
+  insertedIds: { '0': ObjectId('671f4f3f79824cf7a1fe6913') }
+}
+employeeDB> db.employee.insert({"custID":"A123", "Amount":300, "status":"D"})db.employee.find().pretty()
+Uncaught:
+SyntaxError: Missing semicolon. (1:65)
+
+> 1 | db.employee.insert({"custID":"A123", "Amount":300, "status":"D"})db.employee.find().pretty()
+    |                                                                  ^
+  2 |
+
+employeeDB> db.employee.insert({"custID":"A123", "Amount":300, "status":"D"})
+{
+  acknowledged: true,
+  insertedIds: { '0': ObjectId('671f4f4d79824cf7a1fe6914') }
+}
+employeeDB> db.employee.find().pretty()
+[
+  {
+    _id: ObjectId('671f4f3f79824cf7a1fe6911'),
+    custID: 'A123',
+    Amount: 500,
+    status: 'A'
+  },
+  {
+    _id: ObjectId('671f4f3f79824cf7a1fe6912'),
+    custID: 'A123',
+    Amount: 250,
+    status: 'A'
+  },
+  {
+    _id: ObjectId('671f4f3f79824cf7a1fe6913'),
+    custID: 'B212',
+    Amount: 200,
+    status: 'A'
+  },
+  {
+    _id: ObjectId('671f4f4d79824cf7a1fe6914'),
+    custID: 'A123',
+    Amount: 300,
+    status: 'D'
+  }
+]
+employeeDB> db.employee.aggregate([
+...     {$match: {status: "A"}},
+...     {$group: {
+...         _id: "$custID",
+...         totalAmount: {$sum: "$Amount"}
+...     }}
+... ])
+[
+  { _id: 'A123', totalAmount: 750 },
+  { _id: 'B212', totalAmount: 200 }
+]
+employeeDB> db.employee.aggregate([
+...     {$match: {status: "A"}},
+...     {$group: {
+...         _id: "$custID",
+...         minAmount: {$min: "$Amount"}
+...     }}
+... ])
+[ { _id: 'A123', minAmount: 250 }, { _id: 'B212', minAmount: 200 } ]
+employeeDB> db.employee.aggregate([
+...     {$match: {status: "A"}},
+...     {$group: {
+...         _id: "$custID",
+...         maxAmount: {$max: "$Amount"}
+...     }}
+... ])
+[ { _id: 'A123', maxAmount: 500 }, { _id: 'B212', maxAmount: 200 } ]
+employeeDB> db.employee.aggregate([
+...     {$match: {status: "A"}},
+...     {$group: {
+...         _id: "$custID",
+...         avgAmount: {$avg: "$Amount"}
+...     }}
+... ])
+[ { _id: 'A123', avgAmount: 375 }, { _id: 'B212', avgAmount: 200 } ]
+employeeDB> db.employee.aggregate([
+...     {$match: {status: "A"}},
+...     {$group: {
+...         _id: "$custID",
+...         firstAmount: {$first: "$Amount"}
+...     }}
+... ])
+[
+  { _id: 'A123', firstAmount: 500 },
+  { _id: 'B212', firstAmount: 200 }
+]
+employeeDB> db.employee.aggregate([
+...     {$match: {status: "A"}},
+...     {$group: {
+...         _id: "$custID",
+...         lastAmount: {$last: "$Amount"}
+...     }}
+... ])
+[ { _id: 'B212', lastAmount: 200 }, { _id: 'A123', lastAmount: 250 } ]
+employeeDB> db.employee.aggregate([
+...     {$match: {status: "A"}},
+...     {$group: {
+...         _id: "$custID",
+...         amounts: {$push: "$Amount"}
+...     }}
+... ])
+[
+  { _id: 'B212', amounts: [ 200 ] },
+  { _id: 'A123', amounts: [ 500, 250 ] }
+]
+employeeDB> db.employee.aggregate([
+...     {$sort: {Amount: 1}},
+...     {$group: {
+...         _id: "$custID",
+...         totalAmount: {$sum: "$Amount"}
+...     }}
+... ])
+[
+  { _id: 'A123', totalAmount: 1050 },
+  { _id: 'B212', totalAmount: 200 }
+]
+employeeDB> db.employee.aggregate([
+...     {$sort: {Amount: 1}},
+...     {$group: {
+...         _id: "$custID",
+...         avgAmount: {$avg: "$Amount"}
+...     }}
+... ])
+
+[ { _id: 'B212', avgAmount: 200 }, { _id: 'A123', avgAmount: 350 } ]
+
+
+
+employeeDB> db.employee.aggregate([
+...     {$sort: {Amount: 1}},
+...     {$group: {
+...         _id: "$custID",
+...         minAmount: {$min: "$Amount"}
+...     }}
+... ])
+[ { _id: 'A123', minAmount: 250 }, { _id: 'B212', minAmount: 200 } ]
+employeeDB> 
+
+employeeDB> 
+
+employeeDB> 
+
+employeeDB> 
+
+employeeDB> db.employee.aggregate([
+...     {$sort: {Amount: 1}},
+...     {$group: {
+...         _id: "$custID",
+...         maxAmount: {$max: "$Amount"}
+...     }}
+... ])
+[ { _id: 'A123', maxAmount: 500 }, { _id: 'B212', maxAmount: 200 } ]
+employeeDB> 
+
+employeeDB> db.employee.aggregate([
+...     {$sort: {Amount: 1}},
+...     {$group: {
+...         _id: "$custID",
+...         firstAmount: {$first: "$Amount"},
+...         lastAmount: {$last: "$Amount"}
+...     }}
+... ])
+[
+  { _id: 'A123', firstAmount: 250, lastAmount: 500 },
+  { _id: 'B212', firstAmount: 200, lastAmount: 200 }
+]
+employeeDB> 
+
+employeeDB> db.employee.aggregate([
+...     {$sort: {Amount: 1}},
+...     {$group: {
+...         _id: "$custID",
+...         amounts: {$push: "$Amount"}
+...     }}
+... ])
+[
+  { _id: 'A123', amounts: [ 250, 300, 500 ] },
+  { _id: 'B212', amounts: [ 200 ] }
+]
+employeeDB> db.employee.aggregate([
+...     {$skip: 1},
+...     {$group: {
+...         _id: "$custID",
+...         totalAmount: {$sum: "$Amount"},
+...         avgAmount: {$avg: "$Amount"},
+...         maxAmount: {$max: "$Amount"},
+...         minAmount: {$min: "$Amount"},
+...         amounts: {$push: "$Amount"},
+...         firstAmount: {$first: "$Amount"},
+...         lastAmount: {$last: "$Amount"}
+...     }}
+... ])
+[
+  {
+    _id: 'A123',
+    totalAmount: 550,
+    avgAmount: 275,
+    maxAmount: 300,
+    minAmount: 250,
+    amounts: [ 250, 300 ],
+    firstAmount: 250,
+    lastAmount: 300
+  },
+  {
+    _id: 'B212',
+    totalAmount: 200,
+    avgAmount: 200,
+    maxAmount: 200,
+    minAmount: 200,
+    amounts: [ 200 ],
+    firstAmount: 200,
+    lastAmount: 200
+  }
+]
+employeeDB> db.employee.aggregate([
+...     {$limit: 2},
+...     {$group: {
+...         _id: "$custID",
+...         totalAmount: {$sum: "$Amount"},
+...         avgAmount: {$avg: "$Amount"},
+...         minAmount: {$min: "$Amount"},
+...         maxAmount: {$max: "$Amount"},
+...         firstAmount: {$first: "$Amount"},
+...         lastAmount: {$last: "$Amount"},
+...         amounts: {$push: "$Amount"}
+...     }}
+... ])
+[
+  {
+    _id: 'A123',
+    totalAmount: 750,
+    avgAmount: 375,
+    minAmount: 250,
+    maxAmount: 500,
+    firstAmount: 500,
+    lastAmount: 250,
+    amounts: [ 500, 250 ]
+  }
+]
+
