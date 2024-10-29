@@ -1,0 +1,415 @@
+mysql> CREATE TABLE Pack_grades (
+    ->     grade_id INT PRIMARY KEY,
+    ->     grade_name VARCHAR(50),
+    ->     min_price DECIMAL(10, 2),
+    ->     max_price DECIMAL(10, 2)
+    -> );
+Query OK, 0 rows affected (3.37 sec)
+
+mysql> selec
+    -> ;
+ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'selec' at line 1
+mysql> DESC Pack_grades;
++------------+---------------+------+-----+---------+-------+
+| Field      | Type          | Null | Key | Default | Extra |
++------------+---------------+------+-----+---------+-------+
+| grade_id   | int           | NO   | PRI | NULL    |       |
+| grade_name | varchar(50)   | YES  |     | NULL    |       |
+| min_price  | decimal(10,2) | YES  |     | NULL    |       |
+| max_price  | decimal(10,2) | YES  |     | NULL    |       |
++------------+---------------+------+-----+---------+-------+
+4 rows in set (0.00 sec)
+
+mysql> CREATE TABLE Packages (
+    ->     pack_id INT PRIMARY KEY,
+    ->     speed INT,
+    ->     strt_date DATE,
+    ->     monthly_payment DECIMAL(10, 2),
+    ->     sector_id INT,
+    ->     FOREIGN KEY (sector_id) REFERENCES Sectors(sector_id)
+    -> );
+ERROR 1824 (HY000): Failed to open the referenced table 'sectors'
+mysql> CREATE TABLE Packages (
+    ->     pack_id INT PRIMARY KEY,
+    ->     speed INT,
+    ->     strt_date DATE,
+    ->     monthly_payment DECIMAL(10, 2),
+    ->     sector_id INT,
+    ->     FOREIGN KEY (sector_id) REFERENCES Sectors(sector_id)
+    -> );
+ERROR 1824 (HY000): Failed to open the referenced table 'sectors'
+mysql> DROP table Packages;
+ERROR 1051 (42S02): Unknown table 'dbms.packages'
+mysql> CREATE TABLE Sectors (
+    ->     sector_id INT PRIMARY KEY,
+    ->     sector_name VARCHAR(50) NOT NULL
+    -> );
+Query OK, 0 rows affected (0.04 sec)
+
+mysql> CREATE TABLE Packages (
+    ->     pack_id INT PRIMARY KEY,
+    ->     speed INT,
+    ->     strt_date DATE,
+    ->     monthly_payment DECIMAL(10, 2),
+    ->     sector_id INT,
+    ->     FOREIGN KEY (sector_id) REFERENCES Sectors(sector_id)
+    -> );
+Query OK, 0 rows affected (0.04 sec)
+
+mysql> CREATE TABLE Customers (
+    ->     cust_id INT PRIMARY KEY,
+    ->     firstname VARCHAR(50),
+    ->     lastname VARCHAR(50),
+    ->     birthdate DATE,
+    ->     joindate DATE,
+    ->     city VARCHAR(50),
+    ->     state VARCHAR(50),
+    ->     street VARCHAR(100),
+    ->     main_phone_num VARCHAR(20),
+    ->     secondary_phn_no VARCHAR(20),
+    ->     fax VARCHAR(20),
+    ->     monthly_discount DECIMAL(10, 2),
+    ->     pack_id INT,
+    ->     FOREIGN KEY (pack_id) REFERENCES Packages(pack_id)
+    -> );
+Query OK, 0 rows affected (0.04 sec)
+
+mysql> DESC Customers;
++------------------+---------------+------+-----+---------+-------+
+| Field            | Type          | Null | Key | Default | Extra |
++------------------+---------------+------+-----+---------+-------+
+| cust_id          | int           | NO   | PRI | NULL    |       |
+| firstname        | varchar(50)   | YES  |     | NULL    |       |
+| lastname         | varchar(50)   | YES  |     | NULL    |       |
+| birthdate        | date          | YES  |     | NULL    |       |
+| joindate         | date          | YES  |     | NULL    |       |
+| city             | varchar(50)   | YES  |     | NULL    |       |
+| state            | varchar(50)   | YES  |     | NULL    |       |
+| street           | varchar(100)  | YES  |     | NULL    |       |
+| main_phone_num   | varchar(20)   | YES  |     | NULL    |       |
+| secondary_phn_no | varchar(20)   | YES  |     | NULL    |       |
+| fax              | varchar(20)   | YES  |     | NULL    |       |
+| monthly_discount | decimal(10,2) | YES  |     | NULL    |       |
+| pack_id          | int           | YES  | MUL | NULL    |       |
++------------------+---------------+------+-----+---------+-------+
+13 rows in set (0.00 sec)
+
+mysql> DESC Packages;
++-----------------+---------------+------+-----+---------+-------+
+| Field           | Type          | Null | Key | Default | Extra |
++-----------------+---------------+------+-----+---------+-------+
+| pack_id         | int           | NO   | PRI | NULL    |       |
+| speed           | int           | YES  |     | NULL    |       |
+| strt_date       | date          | YES  |     | NULL    |       |
+| monthly_payment | decimal(10,2) | YES  |     | NULL    |       |
+| sector_id       | int           | YES  | MUL | NULL    |       |
++-----------------+---------------+------+-----+---------+-------+
+5 rows in set (0.00 sec)
+
+mysql> DESC Sectors;
++-------------+-------------+------+-----+---------+-------+
+| Field       | Type        | Null | Key | Default | Extra |
++-------------+-------------+------+-----+---------+-------+
+| sector_id   | int         | NO   | PRI | NULL    |       |
+| sector_name | varchar(50) | NO   |     | NULL    |       |
++-------------+-------------+------+-----+---------+-------+
+2 rows in set (0.00 sec)
+
+mysql> SELECT C.firstname, C.lastname, P.pack_id, P.speed
+    -> FROM Customers C
+    -> INNER JOIN Packages P ON C.pack_id = P.pack_id;
+Empty set (0.00 sec)
+
+mysql> INSERT INTO Sectors (sector_id, sector_name)
+    -> VALUES
+    -> (1, 'Business'),
+    -> (2, 'Private'),
+    -> (3, 'Education'),
+    -> (4, 'Government');
+Query OK, 4 rows affected (0.03 sec)
+Records: 4  Duplicates: 0  Warnings: 0
+
+mysql> SELECT * FROM Sectors:
+    -> ;
+ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near ':' at line 1
+mysql> SELECT * FROM Sectors;
++-----------+-------------+
+| sector_id | sector_name |
++-----------+-------------+
+|         1 | Business    |
+|         2 | Private     |
+|         3 | Education   |
+|         4 | Government  |
++-----------+-------------+
+4 rows in set (0.00 sec)
+
+mysql> INSERT INTO Packages (pack_id, speed, strt_date, monthly_payment, sector_id)
+    -> VALUES
+    -> (10, 50, '2022-01-01', 1200.50, 1),
+    -> (20, 100, '2022-03-01', 1500.00, 2),
+    -> (30, 150, '2022-05-15', 2000.75, 3),
+    -> (40, 200, '2023-02-10', 2500.50, 1),
+    -> (50, 250, '2023-07-01', 3000.25, 4);
+Query OK, 5 rows affected (0.00 sec)
+Records: 5  Duplicates: 0  Warnings: 0
+
+mysql> SELECT * FROM Packages;
++---------+-------+------------+-----------------+-----------+
+| pack_id | speed | strt_date  | monthly_payment | sector_id |
++---------+-------+------------+-----------------+-----------+
+|      10 |    50 | 2022-01-01 |         1200.50 |         1 |
+|      20 |   100 | 2022-03-01 |         1500.00 |         2 |
+|      30 |   150 | 2022-05-15 |         2000.75 |         3 |
+|      40 |   200 | 2023-02-10 |         2500.50 |         1 |
+|      50 |   250 | 2023-07-01 |         3000.25 |         4 |
++---------+-------+------------+-----------------+-----------+
+5 rows in set (0.00 sec)
+
+mysql> INSERT INTO Pack_grades (grade_id, grade_name, min_price, max_price)
+    -> VALUES
+    -> (1, 'Bronze', 1000.00, 1499.99),
+    -> (2, 'Silver', 1500.00, 1999.99),
+    -> (3, 'Gold', 2000.00, 2999.99),
+    -> (4, 'Platinum', 3000.00, 5000.00);
+Query OK, 4 rows affected (0.03 sec)
+Records: 4  Duplicates: 0  Warnings: 0
+
+mysql> SELECT * FROM Pack_grades;
++----------+------------+-----------+-----------+
+| grade_id | grade_name | min_price | max_price |
++----------+------------+-----------+-----------+
+|        1 | Bronze     |   1000.00 |   1499.99 |
+|        2 | Silver     |   1500.00 |   1999.99 |
+|        3 | Gold       |   2000.00 |   2999.99 |
+|        4 | Platinum   |   3000.00 |   5000.00 |
++----------+------------+-----------+-----------+
+4 rows in set (0.00 sec)
+
+mysql> INSERT INTO Customers (
+    ->     cust_id, firstname, lastname, birthdate, joindate, city,
+    ->     state, street, main_phone_num, secondary_phn_no, fax,
+    ->     monthly_discount, pack_id
+    -> )
+    -> VALUES
+    -> (1, 'John', 'Doe', '1990-05-15', '2022-06-01', 'New York', 'NY', '5th Ave',
+    ->  '1234567890', '0987654321', '1112223334', 100.00, 10),
+    -> (2, 'Jane', 'Smith', '1985-08-25', '2023-03-15', 'San Francisco', 'CA', 'Market St',
+    ->  '2345678901', '1234567890', '2223334445', 150.00, 20),
+    -> (3, 'Alice', 'Johnson', '1993-02-10', '2022-08-01', 'Chicago', 'IL', 'Wacker Dr',
+    ->  '3456789012', '2345678901', '3334445556', 200.00, 30),
+    -> (4, 'Bob', 'Brown', '1988-12-30', '2023-05-20', 'Los Angeles', 'CA', 'Sunset Blvd',
+    ->  '4567890123', '3456789012', '4445556667', 250.00, 40),
+    -> (5, 'Charlie', 'Davis', '1995-07-18', '2022-11-10', 'Miami', 'FL', 'Ocean Dr',
+    ->  '5678901234', '4567890123', '5556667778', 300.00, 50);
+Query OK, 5 rows affected (0.01 sec)
+Records: 5  Duplicates: 0  Warnings: 0
+
+mysql> SELECT * FROM Customers;
++---------+-----------+----------+------------+------------+---------------+-------+-------------+----------------+------------------+------------+------------------+---------+
+| cust_id | firstname | lastname | birthdate  | joindate   | city          | state | street      | main_phone_num | secondary_phn_no | fax        | monthly_discount | pack_id |
++---------+-----------+----------+------------+------------+---------------+-------+-------------+----------------+------------------+------------+------------------+---------+
+|       1 | John      | Doe      | 1990-05-15 | 2022-06-01 | New York      | NY    | 5th Ave     | 1234567890     | 0987654321       | 1112223334 |           100.00 |      10 |
+|       2 | Jane      | Smith    | 1985-08-25 | 2023-03-15 | San Francisco | CA    | Market St   | 2345678901     | 1234567890       | 2223334445 |           150.00 |      20 |
+|       3 | Alice     | Johnson  | 1993-02-10 | 2022-08-01 | Chicago       | IL    | Wacker Dr   | 3456789012     | 2345678901       | 3334445556 |           200.00 |      30 |
+|       4 | Bob       | Brown    | 1988-12-30 | 2023-05-20 | Los Angeles   | CA    | Sunset Blvd | 4567890123     | 3456789012       | 4445556667 |           250.00 |      40 |
+|       5 | Charlie   | Davis    | 1995-07-18 | 2022-11-10 | Miami         | FL    | Ocean Dr    | 5678901234     | 4567890123       | 5556667778 |           300.00 |      50 |
++---------+-----------+----------+------------+------------+---------------+-------+-------------+----------------+------------------+------------+------------------+---------+
+5 rows in set (0.00 sec)
+
+mysql> SELECT C.firstname, C.lastname, P.pack_id, P.speed
+    -> FROM Customers C
+    -> INNER JOIN Packages P ON C.pack_id = P.pack_id;
++-----------+----------+---------+-------+
+| firstname | lastname | pack_id | speed |
++-----------+----------+---------+-------+
+| John      | Doe      |      10 |    50 |
+| Jane      | Smith    |      20 |   100 |
+| Alice     | Johnson  |      30 |   150 |
+| Bob       | Brown    |      40 |   200 |
+| Charlie   | Davis    |      50 |   250 |
++-----------+----------+---------+-------+
+5 rows in set (0.00 sec)
+
+mysql> SELECT C.firstname, C.lastname, P.pack_id, P.speed
+    -> FROM Customers C
+    -> INNER JOIN Packages P ON C.pack_id = P.pack_id
+    -> WHERE P.pack_id IN (22, 27)
+    -> ORDER BY C.lastname ASC;
+Empty set (0.00 sec)
+
+mysql> SELECT P.pack_id, P.speed, P.monthly_payment, S.sector_name
+    -> FROM Packages P
+    -> INNER JOIN Sectors S ON P.sector_id = S.sector_id;
++---------+-------+-----------------+-------------+
+| pack_id | speed | monthly_payment | sector_name |
++---------+-------+-----------------+-------------+
+|      10 |    50 |         1200.50 | Business    |
+|      40 |   200 |         2500.50 | Business    |
+|      20 |   100 |         1500.00 | Private     |
+|      30 |   150 |         2000.75 | Education   |
+|      50 |   250 |         3000.25 | Government  |
++---------+-------+-----------------+-------------+
+5 rows in set (0.00 sec)
+
+mysql> SELECT C.firstname, C.lastname, P.pack_id, P.speed, P.monthly_payment, S.sector_name
+    -> FROM Customers C
+    -> INNER JOIN Packages P ON C.pack_id = P.pack_id
+    -> INNER JOIN Sectors S ON P.sector_id = S.sector_id;
++-----------+----------+---------+-------+-----------------+-------------+
+| firstname | lastname | pack_id | speed | monthly_payment | sector_name |
++-----------+----------+---------+-------+-----------------+-------------+
+| John      | Doe      |      10 |    50 |         1200.50 | Business    |
+| Bob       | Brown    |      40 |   200 |         2500.50 | Business    |
+| Jane      | Smith    |      20 |   100 |         1500.00 | Private     |
+| Alice     | Johnson  |      30 |   150 |         2000.75 | Education   |
+| Charlie   | Davis    |      50 |   250 |         3000.25 | Government  |
++-----------+----------+---------+-------+-----------------+-------------+
+5 rows in set (0.00 sec)
+
+mysql> SELECT C.firstname, C.lastname, P.pack_id, P.speed, P.monthly_payment, S.sector_name
+    -> FROM Customers C
+    -> INNER JOIN Packages P ON C.pack_id = P.pack_id
+    -> INNER JOIN Sectors S ON P.sector_id = S.sector_id
+    -> WHERE S.sector_name = 'Business';
++-----------+----------+---------+-------+-----------------+-------------+
+| firstname | lastname | pack_id | speed | monthly_payment | sector_name |
++-----------+----------+---------+-------+-----------------+-------------+
+| John      | Doe      |      10 |    50 |         1200.50 | Business    |
+| Bob       | Brown    |      40 |   200 |         2500.50 | Business    |
++-----------+----------+---------+-------+-----------------+-------------+
+2 rows in set (0.00 sec)
+
+mysql> SELECT C.lastname, C.firstname, C.joindate, P.pack_id, P.speed, S.sector_name
+    -> FROM Customers C
+    -> INNER JOIN Packages P ON C.pack_id = P.pack_id
+    -> INNER JOIN Sectors S ON P.sector_id = S.sector_id
+    -> WHERE S.sector_name = 'Private' AND YEAR(C.joindate) = 2006;
+Empty set (0.01 sec)
+
+mysql> SELECT P.pack_id, P.speed, P.monthly_payment, G.grade_name
+    -> FROM Packages P
+    -> INNER JOIN Pack_grades G
+    -> ON P.monthly_payment BETWEEN G.min_price AND G.max_price;
++---------+-------+-----------------+------------+
+| pack_id | speed | monthly_payment | grade_name |
++---------+-------+-----------------+------------+
+|      10 |    50 |         1200.50 | Bronze     |
+|      20 |   100 |         1500.00 | Silver     |
+|      30 |   150 |         2000.75 | Gold       |
+|      40 |   200 |         2500.50 | Gold       |
+|      50 |   250 |         3000.25 | Platinum   |
++---------+-------+-----------------+------------+
+5 rows in set (0.00 sec)
+
+mysql> SELECT C.firstname, C.lastname, P.speed, P.monthly_payment
+    -> FROM Customers C
+    -> INNER JOIN Packages P ON C.pack_id = P.pack_id;
++-----------+----------+-------+-----------------+
+| firstname | lastname | speed | monthly_payment |
++-----------+----------+-------+-----------------+
+| John      | Doe      |    50 |         1200.50 |
+| Jane      | Smith    |   100 |         1500.00 |
+| Alice     | Johnson  |   150 |         2000.75 |
+| Bob       | Brown    |   200 |         2500.50 |
+| Charlie   | Davis    |   250 |         3000.25 |
++-----------+----------+-------+-----------------+
+5 rows in set (0.00 sec)
+
+mysql> SELECT C.firstname, C.lastname, P.speed, P.monthly_payment
+    -> FROM Customers C
+    -> LEFT JOIN Packages P ON C.pack_id = P.pack_id;
++-----------+----------+-------+-----------------+
+| firstname | lastname | speed | monthly_payment |
++-----------+----------+-------+-----------------+
+| John      | Doe      |    50 |         1200.50 |
+| Jane      | Smith    |   100 |         1500.00 |
+| Alice     | Johnson  |   150 |         2000.75 |
+| Bob       | Brown    |   200 |         2500.50 |
+| Charlie   | Davis    |   250 |         3000.25 |
++-----------+----------+-------+-----------------+
+5 rows in set (0.00 sec)
+
+mysql> SELECT P.pack_id, P.speed, P.monthly_payment, C.firstname, C.lastname
+    -> FROM Packages P
+    -> LEFT JOIN Customers C ON P.pack_id = C.pack_id;
++---------+-------+-----------------+-----------+----------+
+| pack_id | speed | monthly_payment | firstname | lastname |
++---------+-------+-----------------+-----------+----------+
+|      10 |    50 |         1200.50 | John      | Doe      |
+|      20 |   100 |         1500.00 | Jane      | Smith    |
+|      30 |   150 |         2000.75 | Alice     | Johnson  |
+|      40 |   200 |         2500.50 | Bob       | Brown    |
+|      50 |   250 |         3000.25 | Charlie   | Davis    |
++---------+-------+-----------------+-----------+----------+
+5 rows in set (0.00 sec)
+
+mysql> SELECT C.firstname, C.lastname, P.pack_id, P.speed
+    -> FROM Customers C
+    -> FULL OUTER JOIN Packages P ON C.pack_id = P.pack_id;
+ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'FULL OUTER JOIN Packages P ON C.pack_id = P.pack_id' at line 3
+mysql> SELECT C.firstname, C.lastname, P.pack_id, P.speed
+    -> FROM Customers C
+    -> LEFT JOIN Packages P ON C.pack_id = P.pack_id
+    ->
+    -> UNION
+    ->
+    -> SELECT C.firstname, C.lastname, P.pack_id, P.speed
+    -> FROM Customers C
+    -> RIGHT JOIN Packages P ON C.pack_id = P.pack_id;
++-----------+----------+---------+-------+
+| firstname | lastname | pack_id | speed |
++-----------+----------+---------+-------+
+| John      | Doe      |      10 |    50 |
+| Jane      | Smith    |      20 |   100 |
+| Alice     | Johnson  |      30 |   150 |
+| Bob       | Brown    |      40 |   200 |
+| Charlie   | Davis    |      50 |   250 |
++-----------+----------+---------+-------+
+5 rows in set (0.00 sec)
+
+mysql> SELECT C1.lastname, C1.firstname, C1.pack_id
+    -> FROM Customers C1
+    -> INNER JOIN Customers C2 ON C1.pack_id = C2.pack_id
+    -> WHERE C2.lastname = 'Taylor' AND C2.firstname = 'A';
+Empty set (0.00 sec)
+
+mysql> SELECT C1.lastname, C1.firstname, C1.monthly_discount
+    -> FROM Customers C1, Customers C2
+    -> WHERE C2.cust_id = 103 AND C1.monthly_discount < C2.monthly_discount;
+Empty set (0.00 sec)
+
+mysql> SELECT P1.pack_id, P1.speed
+    -> FROM Packages P1, Packages P2
+    -> WHERE P2.pack_id = 10 AND P1.speed = P2.speed;
++---------+-------+
+| pack_id | speed |
++---------+-------+
+|      10 |    50 |
++---------+-------+
+1 row in set (0.00 sec)
+
+mysql> SELECT firstname, lastname, joindate
+    -> FROM Customers
+    -> WHERE joindate < (SELECT MIN(strt_date) FROM Packages);
+Empty set (0.01 sec)
+
+mysql> CREATE VIEW CustomerPackageDetails AS
+    -> SELECT C.firstname, C.lastname, P.pack_id, P.speed, S.sector_name
+    -> FROM Customers C
+    -> INNER JOIN Packages P ON C.pack_id = P.pack_id
+    -> INNER JOIN Sectors S ON P.sector_id = S.sector_id;
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> SELECT * FROM CustomerPackageDetails;
++-----------+----------+---------+-------+-------------+
+| firstname | lastname | pack_id | speed | sector_name |
++-----------+----------+---------+-------+-------------+
+| John      | Doe      |      10 |    50 | Business    |
+| Bob       | Brown    |      40 |   200 | Business    |
+| Jane      | Smith    |      20 |   100 | Private     |
+| Alice     | Johnson  |      30 |   150 | Education   |
+| Charlie   | Davis    |      50 |   250 | Government  |
++-----------+----------+---------+-------+-------------+
+5 rows in set (0.00 sec)
+
+mysql>

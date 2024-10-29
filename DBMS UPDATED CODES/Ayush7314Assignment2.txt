@@ -1,0 +1,505 @@
+mysql> create database DBMS;
+Query OK, 1 row affected (0.02 sec)
+
+mysql> use DBMS;
+Database changed
+mysql> CREATE TABLE departments (
+    ->     dept_id INT PRIMARY KEY,
+    ->     dept_name VARCHAR(50) NOT NULL
+    -> );
+Query OK, 0 rows affected (0.04 sec)
+
+mysql> desc departments;
++-----------+-------------+------+-----+---------+-------+
+| Field     | Type        | Null | Key | Default | Extra |
++-----------+-------------+------+-----+---------+-------+
+| dept_id   | int         | NO   | PRI | NULL    |       |
+| dept_name | varchar(50) | NO   |     | NULL    |       |
++-----------+-------------+------+-----+---------+-------+
+2 rows in set (0.00 sec)
+
+mysql> INSERT INTO departments (dept_id, dept_name) VALUES
+    -> (1, 'Administration'),
+    -> (2, 'Customer Service'),
+    -> (3, 'Finance'),
+    -> (4, 'Human Resources'),
+    -> (5, 'Sales');
+Query OK, 5 rows affected (0.01 sec)
+Records: 5  Duplicates: 0  Warnings: 0
+
+mysql> select * from departments;
++---------+------------------+
+| dept_id | dept_name        |
++---------+------------------+
+|       1 | Administration   |
+|       2 | Customer Service |
+|       3 | Finance          |
+|       4 | Human Resources  |
+|       5 | Sales            |
++---------+------------------+
+5 rows in set (0.00 sec)
+
+mysql> CREATE TABLE employees (
+    ->     emp_id INT PRIMARY KEY,
+    ->     emp_name VARCHAR(100) NOT NULL,
+    ->     salary DECIMAL(10, 2) NOT NULL,
+    ->     dept_id INT,
+    ->     FOREIGN KEY (dept_id) REFERENCES departments(dept_id)
+    -> );
+Query OK, 0 rows affected (0.03 sec)
+
+mysql> desc employees;
++----------+---------------+------+-----+---------+-------+
+| Field    | Type          | Null | Key | Default | Extra |
++----------+---------------+------+-----+---------+-------+
+| emp_id   | int           | NO   | PRI | NULL    |       |
+| emp_name | varchar(100)  | NO   |     | NULL    |       |
+| salary   | decimal(10,2) | NO   |     | NULL    |       |
+| dept_id  | int           | YES  | MUL | NULL    |       |
++----------+---------------+------+-----+---------+-------+
+4 rows in set (0.00 sec)
+
+mysql> INSERT INTO employees (emp_id, emp_name, salary, dept_id) VALUES
+    -> (1, 'Ethan Hunt', 5000, 4),
+    -> (2, 'Tony Montana', 6500, 1),
+    -> (3, 'Sarah Connor', 8000, 5),
+    -> (4, 'Rick Deckard', 7200, 3),
+    -> (5, 'Martin Blank', 5600, NULL);
+Query OK, 5 rows affected (0.01 sec)
+Records: 5  Duplicates: 0  Warnings: 0
+
+mysql> select * from employees;
++--------+--------------+---------+---------+
+| emp_id | emp_name     | salary  | dept_id |
++--------+--------------+---------+---------+
+|      1 | Ethan Hunt   | 5000.00 |       4 |
+|      2 | Tony Montana | 6500.00 |       1 |
+|      3 | Sarah Connor | 8000.00 |       5 |
+|      4 | Rick Deckard | 7200.00 |       3 |
+|      5 | Martin Blank | 5600.00 |    NULL |
++--------+--------------+---------+---------+
+5 rows in set (0.00 sec)
+
+mysql> SELECT e.emp_id, e.emp_name, d.dept_name
+    -> FROM employees e
+    -> LEFT JOIN departments d ON e.dept_id = d.dept_id;
++--------+--------------+-----------------+
+| emp_id | emp_name     | dept_name       |
++--------+--------------+-----------------+
+|      1 | Ethan Hunt   | Human Resources |
+|      2 | Tony Montana | Administration  |
+|      3 | Sarah Connor | Sales           |
+|      4 | Rick Deckard | Finance         |
+|      5 | Martin Blank | NULL            |
++--------+--------------+-----------------+
+5 rows in set (0.00 sec)
+
+mysql> CREATE VIEW emp_dept_view AS
+    -> SELECT e.emp_id, e.emp_name, d.dept_name
+    -> FROM employees e
+    -> LEFT JOIN departments d ON e.dept_id = d.dept_id;
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> SELECT * FROM emp_dept_view;
++--------+--------------+-----------------+
+| emp_id | emp_name     | dept_name       |
++--------+--------------+-----------------+
+|      1 | Ethan Hunt   | Human Resources |
+|      2 | Tony Montana | Administration  |
+|      3 | Sarah Connor | Sales           |
+|      4 | Rick Deckard | Finance         |
+|      5 | Martin Blank | NULL            |
++--------+--------------+-----------------+
+5 rows in set (0.00 sec)
+
+mysql> CREATE OR REPLACE VIEW emp_dept_view AS
+    -> SELECT e.emp_id, e.emp_name, d.dept_name, e.salary
+    -> FROM employees e
+    -> LEFT JOIN departments d ON e.dept_id = d.dept_id;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> INSERT INTO employees (emp_id, emp_name, salary, dept_id)
+    -> VALUES
+    -> (6, 'John Wick', 7000, 2),
+    -> (7, 'Bruce Wayne', 8500, 1),
+    -> (8, 'Diana Prince', 9000, 5);
+Query OK, 3 rows affected (0.03 sec)
+Records: 3  Duplicates: 0  Warnings: 0
+
+mysql> select * from employees;
++--------+--------------+---------+---------+
+| emp_id | emp_name     | salary  | dept_id |
++--------+--------------+---------+---------+
+|      1 | Ethan Hunt   | 5000.00 |       4 |
+|      2 | Tony Montana | 6500.00 |       1 |
+|      3 | Sarah Connor | 8000.00 |       5 |
+|      4 | Rick Deckard | 7200.00 |       3 |
+|      5 | Martin Blank | 5600.00 |    NULL |
+|      6 | John Wick    | 7000.00 |       2 |
+|      7 | Bruce Wayne  | 8500.00 |       1 |
+|      8 | Diana Prince | 9000.00 |       5 |
++--------+--------------+---------+---------+
+8 rows in set (0.00 sec)
+
+mysql> UPDATE employees
+    -> SET salary = 6000
+    -> WHERE emp_id = 1;
+Query OK, 1 row affected (0.00 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql> SELECT * FROM employees
+    -> WHERE dept_id IS NULL;
++--------+--------------+---------+---------+
+| emp_id | emp_name     | salary  | dept_id |
++--------+--------------+---------+---------+
+|      5 | Martin Blank | 5600.00 |    NULL |
++--------+--------------+---------+---------+
+1 row in set (0.00 sec)
+
+mysql> DELETE FROM employees
+    -> WHERE salary = 8000;
+Query OK, 1 row affected (0.01 sec)
+
+mysql> SELECT * FROM employees
+    -> ;
++--------+--------------+---------+---------+
+| emp_id | emp_name     | salary  | dept_id |
++--------+--------------+---------+---------+
+|      1 | Ethan Hunt   | 6000.00 |       4 |
+|      2 | Tony Montana | 6500.00 |       1 |
+|      4 | Rick Deckard | 7200.00 |       3 |
+|      5 | Martin Blank | 5600.00 |    NULL |
+|      6 | John Wick    | 7000.00 |       2 |
+|      7 | Bruce Wayne  | 8500.00 |       1 |
+|      8 | Diana Prince | 9000.00 |       5 |
++--------+--------------+---------+---------+
+7 rows in set (0.00 sec)
+
+mysql> DROP VIEW emp_dept_view;
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> SELECT * FROM employees;
++--------+--------------+---------+---------+
+| emp_id | emp_name     | salary  | dept_id |
++--------+--------------+---------+---------+
+|      1 | Ethan Hunt   | 6000.00 |       4 |
+|      2 | Tony Montana | 6500.00 |       1 |
+|      4 | Rick Deckard | 7200.00 |       3 |
+|      5 | Martin Blank | 5600.00 |    NULL |
+|      6 | John Wick    | 7000.00 |       2 |
+|      7 | Bruce Wayne  | 8500.00 |       1 |
+|      8 | Diana Prince | 9000.00 |       5 |
++--------+--------------+---------+---------+
+7 rows in set (0.00 sec)
+
+mysql> SELECT DISTINCT Address FROM Employees;
+ERROR 1054 (42S22): Unknown column 'Address' in 'field list'
+mysql> SELECT MAX(Salary) AS max_salary, MIN(Salary) AS min_salary, AVG(Salary) AS avg_salary, SUM(Salary) AS total_salary FROM Employees;
++------------+------------+-------------+--------------+
+| max_salary | min_salary | avg_salary  | total_salary |
++------------+------------+-------------+--------------+
+|    9000.00 |    5600.00 | 7114.285714 |     49800.00 |
++------------+------------+-------------+--------------+
+1 row in set (0.01 sec)
+
+mysql> SELECT * FROM Employees ORDER BY Salary ASC;
++--------+--------------+---------+---------+
+| emp_id | emp_name     | salary  | dept_id |
++--------+--------------+---------+---------+
+|      5 | Martin Blank | 5600.00 |    NULL |
+|      1 | Ethan Hunt   | 6000.00 |       4 |
+|      2 | Tony Montana | 6500.00 |       1 |
+|      6 | John Wick    | 7000.00 |       2 |
+|      4 | Rick Deckard | 7200.00 |       3 |
+|      7 | Bruce Wayne  | 8500.00 |       1 |
+|      8 | Diana Prince | 9000.00 |       5 |
++--------+--------------+---------+---------+
+7 rows in set (0.00 sec)
+
+mysql> ALTER TABLE employees
+    -> ADD COLUMN address VARCHAR(100);
+Query OK, 0 rows affected (0.02 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql> UPDATE employees
+    -> SET address = 'New York' WHERE emp_id = 1;
+Query OK, 1 row affected (0.01 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql> UPDATE employees
+    -> SET address = 'Miami' WHERE emp_id = 2;
+Query OK, 1 row affected (0.00 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql> UPDATE employees
+    -> SET address = 'Los Angeles' WHERE emp_id = 4;
+Query OK, 1 row affected (0.00 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql> UPDATE employees
+    -> SET address = 'Chicago' WHERE emp_id = 5;
+Query OK, 1 row affected (0.00 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql> UPDATE employees
+    -> SET address = 'San Francisco' WHERE emp_id = 6;
+Query OK, 1 row affected (0.00 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql> UPDATE employees
+    -> SET address = 'Gotham' WHERE emp_id = 7;
+Query OK, 1 row affected (0.00 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql> UPDATE employees
+    -> SET address = 'Themyscira' WHERE emp_id = 8;
+Query OK, 1 row affected (0.00 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql> SELECT DISTINCT address FROM employees;
++---------------+
+| address       |
++---------------+
+| New York      |
+| Miami         |
+| Los Angeles   |
+| Chicago       |
+| San Francisco |
+| Gotham        |
+| Themyscira    |
++---------------+
+7 rows in set (0.00 sec)
+
+mysql> SELECT EName FROM Employees WHERE Address IN ('Nasik', 'Pune');
+ERROR 1054 (42S22): Unknown column 'EName' in 'field list'
+mysql> SELECT emp_name FROM employees WHERE address IN ('Nasik', 'Pune');
+Empty set (0.00 sec)
+
+mysql> select * from employees;
++--------+--------------+---------+---------+---------------+
+| emp_id | emp_name     | salary  | dept_id | address       |
++--------+--------------+---------+---------+---------------+
+|      1 | Ethan Hunt   | 6000.00 |       4 | New York      |
+|      2 | Tony Montana | 6500.00 |       1 | Miami         |
+|      4 | Rick Deckard | 7200.00 |       3 | Los Angeles   |
+|      5 | Martin Blank | 5600.00 |    NULL | Chicago       |
+|      6 | John Wick    | 7000.00 |       2 | San Francisco |
+|      7 | Bruce Wayne  | 8500.00 |       1 | Gotham        |
+|      8 | Diana Prince | 9000.00 |       5 | Themyscira    |
++--------+--------------+---------+---------+---------------+
+7 rows in set (0.00 sec)
+
+mysql> alter table employee drop column address;
+ERROR 1146 (42S02): Table 'dbms.employee' doesn't exist
+mysql> alter table employees drop column address;
+Query OK, 0 rows affected (0.01 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql> select * from employees;
++--------+--------------+---------+---------+
+| emp_id | emp_name     | salary  | dept_id |
++--------+--------------+---------+---------+
+|      1 | Ethan Hunt   | 6000.00 |       4 |
+|      2 | Tony Montana | 6500.00 |       1 |
+|      4 | Rick Deckard | 7200.00 |       3 |
+|      5 | Martin Blank | 5600.00 |    NULL |
+|      6 | John Wick    | 7000.00 |       2 |
+|      7 | Bruce Wayne  | 8500.00 |       1 |
+|      8 | Diana Prince | 9000.00 |       5 |
++--------+--------------+---------+---------+
+7 rows in set (0.00 sec)
+
+mysql> CREATE TABLE projects (
+    ->     prno INT PRIMARY KEY,
+    ->     addr VARCHAR(100)
+    -> );
+Query OK, 0 rows affected (0.03 sec)
+
+mysql> drop table employees;
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> CREATE TABLE employees (
+    ->     eid INT PRIMARY KEY,
+    ->     ename VARCHAR(50),
+    ->     address VARCHAR(100),
+    ->     salary DECIMAL(10, 2),
+    ->     commission DECIMAL(10, 2)
+    -> );
+Query OK, 0 rows affected (0.03 sec)
+
+mysql> INSERT INTO employees (eid, ename, address, salary, commission) VALUES
+    -> (1, 'Amit', 'Pune', 35000, 5000),
+    -> (2, 'Sneha', 'Pune', 25000, 2000),
+    -> (3, 'Savita', 'Nasik', 28000, 2000),
+    -> (4, 'Pooja', 'Mumbai', 19000, 0),
+    -> (5, 'Sagar', 'Mumbai', 25000, 3000),
+    -> (6, 'Rohit', 'Jaipur', 40000, 2000),
+    -> (7, 'Poonam', 'Patana', 45000, 900),
+    -> (8, 'Arjun', 'Delhi', 20000, 900),
+    -> (9, 'Rahul', 'Nagpur', 60000, 5000),
+    -> (10, 'Dulquer', 'Kochi', 30000, 1000);
+Query OK, 10 rows affected (0.00 sec)
+Records: 10  Duplicates: 0  Warnings: 0
+
+mysql> CREATE TABLE projects (
+    ->     prno INT PRIMARY KEY,
+    ->     addr VARCHAR(100)
+    -> );
+ERROR 1050 (42S01): Table 'projects' already exists
+mysql> select * from projects;
+Empty set (0.00 sec)
+
+mysql> INSERT INTO projects (prno, addr) VALUES
+    -> (10, 'Mumbai'),
+    -> (20, 'Pune'),
+    -> (30, 'Jalgaon'),
+    -> (40, 'Nagpur'),
+    -> (50, 'Delhi'),
+    -> (60, 'Kochi'),
+    -> (70, 'Pune'),
+    -> (80, 'Nasik');
+Query OK, 8 rows affected (0.01 sec)
+Records: 8  Duplicates: 0  Warnings: 0
+
+mysql> select * from projects;
++------+---------+
+| prno | addr    |
++------+---------+
+|   10 | Mumbai  |
+|   20 | Pune    |
+|   30 | Jalgaon |
+|   40 | Nagpur  |
+|   50 | Delhi   |
+|   60 | Kochi   |
+|   70 | Pune    |
+|   80 | Nasik   |
++------+---------+
+8 rows in set (0.00 sec)
+
+mysql> SELECT EName FROM Employees WHERE Address IN ('Nasik', 'Pune');
++--------+
+| EName  |
++--------+
+| Amit   |
+| Sneha  |
+| Savita |
++--------+
+3 rows in set (0.00 sec)
+
+mysql> SELECT EName FROM Employees WHERE Commission IS NULL;
+Empty set (0.00 sec)
+
+mysql> UPDATE Employees SET Address = 'Nasik' WHERE EName = 'Amit';
+Query OK, 1 row affected (0.00 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql> SELECT * FROM Employees WHERE EName LIKE 'A%';
++-----+-------+---------+----------+------------+
+| eid | ename | address | salary   | commission |
++-----+-------+---------+----------+------------+
+|   1 | Amit  | Nasik   | 35000.00 |    5000.00 |
+|   8 | Arjun | Delhi   | 20000.00 |     900.00 |
++-----+-------+---------+----------+------------+
+2 rows in set (0.00 sec)
+
+mysql> SELECT COUNT(*) FROM Employees WHERE Address = 'Mumbai';
++----------+
+| COUNT(*) |
++----------+
+|        2 |
++----------+
+1 row in set (0.00 sec)
+
+mysql> SELECT Address, COUNT(*) AS staff_count FROM Employees GROUP BY Address;
++---------+-------------+
+| Address | staff_count |
++---------+-------------+
+| Nasik   |           2 |
+| Pune    |           1 |
+| Mumbai  |           2 |
+| Jaipur  |           1 |
+| Patana  |           1 |
+| Delhi   |           1 |
+| Nagpur  |           1 |
+| Kochi   |           1 |
++---------+-------------+
+8 rows in set (0.00 sec)
+
+mysql> SELECT Address FROM Employees
+    -> UNION
+    -> SELECT Addr FROM Projects;
++---------+
+| Address |
++---------+
+| Nasik   |
+| Pune    |
+| Mumbai  |
+| Jaipur  |
+| Patana  |
+| Delhi   |
+| Nagpur  |
+| Kochi   |
+| Jalgaon |
++---------+
+9 rows in set (0.00 sec)
+
+mysql> SELECT Address, MIN(Salary) AS min_salary FROM Employees GROUP BY Address;
++---------+------------+
+| Address | min_salary |
++---------+------------+
+| Nasik   |   28000.00 |
+| Pune    |   25000.00 |
+| Mumbai  |   19000.00 |
+| Jaipur  |   40000.00 |
+| Patana  |   45000.00 |
+| Delhi   |   20000.00 |
+| Nagpur  |   60000.00 |
+| Kochi   |   30000.00 |
++---------+------------+
+8 rows in set (0.00 sec)
+
+mysql> SELECT Address, MAX(Salary) AS max_salary FROM Employees GROUP BY Address HAVING MAX(Salary) > 26000;
++---------+------------+
+| Address | max_salary |
++---------+------------+
+| Nasik   |   35000.00 |
+| Jaipur  |   40000.00 |
+| Patana  |   45000.00 |
+| Nagpur  |   60000.00 |
+| Kochi   |   30000.00 |
++---------+------------+
+5 rows in set (0.01 sec)
+
+mysql> DELETE FROM Employees WHERE Salary > 30000;
+Query OK, 4 rows affected (0.01 sec)
+
+mysql> SELECT * FROM Employees;
++-----+---------+---------+----------+------------+
+| eid | ename   | address | salary   | commission |
++-----+---------+---------+----------+------------+
+|   2 | Sneha   | Pune    | 25000.00 |    2000.00 |
+|   3 | Savita  | Nasik   | 28000.00 |    2000.00 |
+|   4 | Pooja   | Mumbai  | 19000.00 |       0.00 |
+|   5 | Sagar   | Mumbai  | 25000.00 |    3000.00 |
+|   8 | Arjun   | Delhi   | 20000.00 |     900.00 |
+|  10 | Dulquer | Kochi   | 30000.00 |    1000.00 |
++-----+---------+---------+----------+------------+
+6 rows in set (0.00 sec)
+
+mysql> DELETE FROM Employees WHERE EName LIKE 'S%';
+Query OK, 3 rows affected (0.02 sec)
+
+mysql> SELECT * FROM Employees;
++-----+---------+---------+----------+------------+
+| eid | ename   | address | salary   | commission |
++-----+---------+---------+----------+------------+
+|   4 | Pooja   | Mumbai  | 19000.00 |       0.00 |
+|   8 | Arjun   | Delhi   | 20000.00 |     900.00 |
+|  10 | Dulquer | Kochi   | 30000.00 |    1000.00 |
++-----+---------+---------+----------+------------+
+3 rows in set (0.00 sec)
+
+mysql> SELECT * FROM Employees WHERE Address = 'Pune' ORDER BY EName ASC;
+Empty set (0.00 sec)
+
+mysql>
