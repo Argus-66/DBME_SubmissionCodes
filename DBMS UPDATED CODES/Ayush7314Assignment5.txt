@@ -1,0 +1,174 @@
+mysql> 
+mysql> CREATE TABLE Stud_Marks (
+    ->     Roll INT PRIMARY KEY,
+    ->     Name VARCHAR(50),
+    ->     Total_marks INT
+    -> );
+Query OK, 0 rows affected (0.03 sec)
+
+mysql> CREATE TABLE Result (
+    ->     Roll INT,
+    ->     Name VARCHAR(50),
+    ->     Class VARCHAR(50),
+    ->     FOREIGN KEY (Roll) REFERENCES Stud_Marks(Roll)
+    -> );
+Query OK, 0 rows affected (0.03 sec)
+
+mysql> DESC Stud_Marks;
++-------------+-------------+------+-----+---------+-------+
+| Field       | Type        | Null | Key | Default | Extra |
++-------------+-------------+------+-----+---------+-------+
+| Roll        | int         | NO   | PRI | NULL    |       |
+| Name        | varchar(50) | YES  |     | NULL    |       |
+| Total_marks | int         | YES  |     | NULL    |       |
++-------------+-------------+------+-----+---------+-------+
+3 rows in set (0.01 sec)
+
+mysql> DESC Result;
++-------+-------------+------+-----+---------+-------+
+| Field | Type        | Null | Key | Default | Extra |
++-------+-------------+------+-----+---------+-------+
+| Roll  | int         | YES  | MUL | NULL    |       |
+| Name  | varchar(50) | YES  |     | NULL    |       |
+| Class | varchar(50) | YES  |     | NULL    |       |
++-------+-------------+------+-----+---------+-------+
+3 rows in set (0.00 sec)
+
+mysql> DELIMITER //
+mysql> 
+mysql> CREATE PROCEDURE proc_Grade()
+    -> BEGIN
+    ->     -- Declare variables
+    ->     DECLARE v_roll INT;
+    ->     DECLARE v_name VARCHAR(50);
+    ->     DECLARE v_marks INT;
+    ->     DECLARE v_class VARCHAR(50);
+    ->     DECLARE v_finished INT DEFAULT 0;
+    ->     
+    ->     -- Declare cursor
+    ->     DECLARE stud_cursor CURSOR FOR 
+    ->         SELECT Roll, Name, Total_marks 
+    ->         FROM Stud_Marks;
+    ->     
+    ->     -- Declare handler for cursor
+    ->     DECLARE CONTINUE HANDLER FOR NOT FOUND 
+    ->         SET v_finished = 1;
+    ->     
+    ->     -- Empty the Result table first
+    ->     TRUNCATE TABLE Result;
+    ->     
+    ->     -- Open cursor
+    ->     OPEN stud_cursor;
+    ->     
+    ->     grade_loop: LOOP
+    ->         -- Fetch records
+    ->         FETCH stud_cursor INTO v_roll, v_name, v_marks;
+    ->         
+    ->         -- Exit loop if no more records
+    ->         IF v_finished = 1 THEN
+    ->             LEAVE grade_loop;
+    ->         END IF;
+    ->         
+    ->         -- Determine class based on marks
+    ->         IF v_marks >= 990 AND v_marks <= 1500 THEN
+    ->             SET v_class = 'Distinction';
+    ->         ELSEIF v_marks >= 900 AND v_marks <= 989 THEN
+    ->             SET v_class = 'First Class';
+    ->         ELSEIF v_marks >= 825 AND v_marks <= 899 THEN
+    ->             SET v_class = 'Higher Second Class';
+    ->         ELSE
+    ->             SET v_class = 'No Grade';
+    ->         END IF;
+    ->         
+    ->         -- Insert into Result table
+    ->         INSERT INTO Result (Roll, Name, Class)
+    ->         VALUES (v_roll, v_name, v_class);
+    ->         
+    ->     END LOOP grade_loop;
+    ->     
+    ->     -- Close cursor
+    ->     CLOSE stud_cursor;
+    ->     
+    ->     -- Display results
+    ->     SELECT * FROM Result ORDER BY Roll;
+    ->     
+    -> END //
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> 
+mysql> DELIMITER ;
+mysql> 
+mysql> 
+mysql> 
+mysql> 
+mysql> INSERT INTO Stud_Marks (Roll, Name, Total_marks) VALUES
+    -> (1, 'John Doe', 1200),
+    -> (2, 'Jane Smith', 950),
+    -> (3, 'Bob Wilson', 875),
+    -> (4, 'Alice Brown', 1100),
+    -> (5, 'Charlie Davis', 930),
+    -> (6, 'Eva Green', 850),
+    -> (7, 'David Miller', 1000),
+    -> (8, 'Sarah Wilson', 920),
+    -> (9, 'Michael Clark', 800),
+    -> (10, 'Emma Watson', 995);
+Query OK, 10 rows affected (0.02 sec)
+Records: 10  Duplicates: 0  Warnings: 0
+
+mysql> CALL proc_Grade();
++------+---------------+---------------------+
+| Roll | Name          | Class               |
++------+---------------+---------------------+
+|    1 | John Doe      | Distinction         |
+|    2 | Jane Smith    | First Class         |
+|    3 | Bob Wilson    | Higher Second Class |
+|    4 | Alice Brown   | Distinction         |
+|    5 | Charlie Davis | First Class         |
+|    6 | Eva Green     | Higher Second Class |
+|    7 | David Miller  | Distinction         |
+|    8 | Sarah Wilson  | First Class         |
+|    9 | Michael Clark | No Grade            |
+|   10 | Emma Watson   | Distinction         |
++------+---------------+---------------------+
+10 rows in set (0.07 sec)
+
+Query OK, 0 rows affected (0.07 sec)
+
+mysql> SELECT * FROM Result WHERE Roll = 1;
++------+----------+-------------+
+| Roll | Name     | Class       |
++------+----------+-------------+
+|    1 | John Doe | Distinction |
++------+----------+-------------+
+1 row in set (0.00 sec)
+
+mysql> SELECT Class, COUNT(*) as Count
+    -> FROM Result
+    -> GROUP BY Class
+    -> ORDER BY Count DESC;
++---------------------+-------+
+| Class               | Count |
++---------------------+-------+
+| Distinction         |     4 |
+| First Class         |     3 |
+| Higher Second Class |     2 |
+| No Grade            |     1 |
++---------------------+-------+
+4 rows in set (0.00 sec)
+
+mysql> SELECT * FROM Result
+    -> WHERE Class = 'Distinction'
+    -> ORDER BY Name;
++------+--------------+-------------+
+| Roll | Name         | Class       |
++------+--------------+-------------+
+|    4 | Alice Brown  | Distinction |
+|    7 | David Miller | Distinction |
+|   10 | Emma Watson  | Distinction |
+|    1 | John Doe     | Distinction |
++------+--------------+-------------+
+4 rows in set (0.00 sec)
+
+mysql> 
+
+

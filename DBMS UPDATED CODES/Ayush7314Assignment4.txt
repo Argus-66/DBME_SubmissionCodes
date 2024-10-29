@@ -1,0 +1,280 @@
+mysql> use dbms;
+Database changed
+mysql> 
+mysql> 
+mysql> 
+mysql> CREATE TABLE Borrower (
+    ->     Roll_no INT PRIMARY KEY,
+    ->     Name VARCHAR(50),
+    ->     DateofIssue DATE,
+    ->     NameofBook VARCHAR(100),
+    ->     Status CHAR(1),
+    ->     CONSTRAINT chk_status CHECK (Status IN ('I','R'))  -- I: Issued, R: Returned
+    -> );
+Query OK, 0 rows affected (0.05 sec)
+
+mysql> CREATE TABLE Fine (
+    ->     Roll_no INT,
+    ->     Date DATE,
+    ->     Amt DECIMAL(10,2),
+    ->     FOREIGN KEY (Roll_no) REFERENCES Borrower(Roll_no)
+    -> );
+Query OK, 0 rows affected (0.03 sec)
+
+mysql> DESC Borrower;
++-------------+--------------+------+-----+---------+-------+
+| Field       | Type         | Null | Key | Default | Extra |
++-------------+--------------+------+-----+---------+-------+
+| Roll_no     | int          | NO   | PRI | NULL    |       |
+| Name        | varchar(50)  | YES  |     | NULL    |       |
+| DateofIssue | date         | YES  |     | NULL    |       |
+| NameofBook  | varchar(100) | YES  |     | NULL    |       |
+| Status      | char(1)      | YES  |     | NULL    |       |
++-------------+--------------+------+-----+---------+-------+
+5 rows in set (0.01 sec)
+
+mysql> DESC Fine;
++---------+---------------+------+-----+---------+-------+
+| Field   | Type          | Null | Key | Default | Extra |
++---------+---------------+------+-----+---------+-------+
+| Roll_no | int           | YES  | MUL | NULL    |       |
+| Date    | date          | YES  |     | NULL    |       |
+| Amt     | decimal(10,2) | YES  |     | NULL    |       |
++---------+---------------+------+-----+---------+-------+
+3 rows in set (0.01 sec)
+
+mysql> INSERT INTO Borrower VALUES 
+    -> (101, 'Rahul Sharma', DATE_SUB(CURDATE(), INTERVAL 10 DAY), 'Database Management Systems', 'I'),
+    -> (102, 'Priya Patel', DATE_SUB(CURDATE(), INTERVAL 20 DAY), 'Data Structures', 'I'),
+    -> (103, 'Amit Kumar', DATE_SUB(CURDATE(), INTERVAL 35 DAY), 'Operating Systems', 'I'),
+    -> (104, 'Sneha Verma', DATE_SUB(CURDATE(), INTERVAL 5 DAY), 'Computer Networks', 'I'),
+    -> (105, 'Raj Malhotra', DATE_SUB(CURDATE(), INTERVAL 45 DAY), 'Software Engineering', 'I'),
+    -> (106, 'Neha Singh', DATE_SUB(CURDATE(), INTERVAL 15 DAY), 'Web Development', 'I'),
+    -> (107, 'Arun Gupta', DATE_SUB(CURDATE(), INTERVAL 25 DAY), 'Python Programming', 'I'),
+    -> (108, 'Meera Reddy', DATE_SUB(CURDATE(), INTERVAL 8 DAY), 'Machine Learning', 'I'),
+    -> (109, 'Karthik Iyer', DATE_SUB(CURDATE(), INTERVAL 30 DAY), 'Artificial Intelligence', 'I'),
+    -> (110, 'Ananya Das', DATE_SUB(CURDATE(), INTERVAL 12 DAY), 'Cloud Computing', 'I');
+Query OK, 10 rows affected (0.01 sec)
+Records: 10  Duplicates: 0  Warnings: 0
+
+mysql> 
+mysql> COMMIT;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> SELECT * FROM bORROWER;
+ERROR 1146 (42S02): Table 'dbms.bORROWER' doesn't exist
+mysql> SELECT * FROM Borrower;
++---------+--------------+-------------+-----------------------------+--------+
+| Roll_no | Name         | DateofIssue | NameofBook                  | Status |
++---------+--------------+-------------+-----------------------------+--------+
+|     101 | Rahul Sharma | 2024-10-18  | Database Management Systems | I      |
+|     102 | Priya Patel  | 2024-10-08  | Data Structures             | I      |
+|     103 | Amit Kumar   | 2024-09-23  | Operating Systems           | I      |
+|     104 | Sneha Verma  | 2024-10-23  | Computer Networks           | I      |
+|     105 | Raj Malhotra | 2024-09-13  | Software Engineering        | I      |
+|     106 | Neha Singh   | 2024-10-13  | Web Development             | I      |
+|     107 | Arun Gupta   | 2024-10-03  | Python Programming          | I      |
+|     108 | Meera Reddy  | 2024-10-20  | Machine Learning            | I      |
+|     109 | Karthik Iyer | 2024-09-28  | Artificial Intelligence     | I      |
+|     110 | Ananya Das   | 2024-10-16  | Cloud Computing             | I      |
++---------+--------------+-------------+-----------------------------+--------+
+10 rows in set (0.01 sec)
+
+mysql> DELIMITER //
+mysql> 
+mysql> CREATE PROCEDURE CalculateFine(IN p_roll_no INT, IN p_book_name VARCHAR(100))
+    -> BEGIN
+    ->     DECLARE v_dateofissue DATE;
+    ->     DECLARE v_status CHAR(1);
+    ->     DECLARE v_student_name VARCHAR(50);
+    ->     DECLARE v_days INT;
+    ->     DECLARE v_fine_amount DECIMAL(10,2);
+    ->     DECLARE v_count INT;
+    ->     DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    ->     BEGIN
+    ->         ROLLBACK;
+    ->         SELECT 'An error has occurred, transaction rolled back';
+    ->     END;
+    -> 
+    ->     START TRANSACTION;
+    ->     
+    ->     -- Check if record exists
+    ->     SELECT COUNT(*) INTO v_count
+    ->     FROM Borrower 
+    ->     WHERE Roll_no = p_roll_no AND NameofBook = p_book_name;
+    ->     
+    ->     IF v_count = 0 THEN
+    ->         SIGNAL SQLSTATE '45000'
+    ->         SET MESSAGE_TEXT = 'Invalid Roll Number or Book combination!';
+    ->     END IF;
+    -> 
+    ->     -- Get issue details
+    ->     SELECT DateofIssue, Status, Name INTO v_dateofissue, v_status, v_student_name
+    ->     FROM Borrower
+    ->     WHERE Roll_no = p_roll_no AND NameofBook = p_book_name;
+    -> 
+    ->     IF v_status = 'R' THEN
+    ->         SIGNAL SQLSTATE '45000'
+    ->         SET MESSAGE_TEXT = 'This book has already been returned!';
+    ->     END IF;
+    -> 
+    ->     -- Calculate days
+    ->     SET v_days = DATEDIFF(CURDATE(), v_dateofissue);
+    -> 
+    ->     -- Calculate fine
+    ->     IF v_days <= 15 THEN
+    ->         SET v_fine_amount = 0;
+    ->     ELSEIF v_days <= 30 THEN
+    ->         SET v_fine_amount = (v_days - 15) * 5;
+    ->     ELSE
+    ->         SET v_fine_amount = (30 - 15) * 5 + (v_days - 30) * 50;
+    ->     END IF;
+    -> 
+    ->     -- Update book status
+    ->     UPDATE Borrower 
+    ->     SET Status = 'R'
+    ->     WHERE Roll_no = p_roll_no AND NameofBook = p_book_name;
+    -> 
+    ->     -- Insert fine record if applicable
+    ->     IF v_fine_amount > 0 THEN
+    ->         INSERT INTO Fine (Roll_no, Date, Amt)
+    ->         VALUES (p_roll_no, CURDATE(), v_fine_amount);
+    ->     END IF;
+    -> 
+    ->     -- Output results
+    ->     SELECT 
+    ->         v_student_name AS 'Student Name',
+    ->         p_roll_no AS 'Roll No',
+    ->         p_book_name AS 'Book Name',
+    ->         v_dateofissue AS 'Issue Date',
+    ->         CURDATE() AS 'Return Date',
+    ->         v_days AS 'Days Kept',
+    ->         v_fine_amount AS 'Fine Amount';
+    -> 
+    ->     COMMIT;
+    -> END //
+Query OK, 0 rows affected (0.03 sec)
+
+mysql> 
+mysql> DELIMITER ;
+mysql> 
+mysql> 
+mysql> 
+mysql> 
+mysql> CALL CalculateFine(101, 'Database Management Systems');
++--------------+---------+-----------------------------+------------+-------------+-----------+-------------+
+| Student Name | Roll No | Book Name                   | Issue Date | Return Date | Days Kept | Fine Amount |
++--------------+---------+-----------------------------+------------+-------------+-----------+-------------+
+| Rahul Sharma |     101 | Database Management Systems | 2024-10-18 | 2024-10-28  |        10 |        0.00 |
++--------------+---------+-----------------------------+------------+-------------+-----------+-------------+
+1 row in set (0.01 sec)
+
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> SELECT * FROM Borrower;
++---------+--------------+-------------+-----------------------------+--------+
+| Roll_no | Name         | DateofIssue | NameofBook                  | Status |
++---------+--------------+-------------+-----------------------------+--------+
+|     101 | Rahul Sharma | 2024-10-18  | Database Management Systems | R      |
+|     102 | Priya Patel  | 2024-10-08  | Data Structures             | I      |
+|     103 | Amit Kumar   | 2024-09-23  | Operating Systems           | I      |
+|     104 | Sneha Verma  | 2024-10-23  | Computer Networks           | I      |
+|     105 | Raj Malhotra | 2024-09-13  | Software Engineering        | I      |
+|     106 | Neha Singh   | 2024-10-13  | Web Development             | I      |
+|     107 | Arun Gupta   | 2024-10-03  | Python Programming          | I      |
+|     108 | Meera Reddy  | 2024-10-20  | Machine Learning            | I      |
+|     109 | Karthik Iyer | 2024-09-28  | Artificial Intelligence     | I      |
+|     110 | Ananya Das   | 2024-10-16  | Cloud Computing             | I      |
++---------+--------------+-------------+-----------------------------+--------+
+10 rows in set (0.00 sec)
+
+mysql> SELECT * FROM Fine;
+Empty set (0.00 sec)
+
+mysql> 
+mysql> SELECT b.Roll_no, b.Name, b.NameofBook, b.DateofIssue, b.Status, f.Amt as Fine_Amount
+    -> FROM Borrower b
+    -> LEFT JOIN Fine f ON b.Roll_no = f.Roll_no
+    -> WHERE b.Roll_no = 101;
++---------+--------------+-----------------------------+-------------+--------+-------------+
+| Roll_no | Name         | NameofBook                  | DateofIssue | Status | Fine_Amount |
++---------+--------------+-----------------------------+-------------+--------+-------------+
+|     101 | Rahul Sharma | Database Management Systems | 2024-10-18  | R      |        NULL |
++---------+--------------+-----------------------------+-------------+--------+-------------+
+1 row in set (0.00 sec)
+
+mysql> INSERT INTO Fine (Roll_no, Date, Amt) VALUES
+    ->     -- 20 days (5 days late, fine: 5 * 5 = 25)
+    ->     (102, '2024-10-28', 25.00),
+    ->     
+    ->     -- 35 days (15 days at ₹5 + 5 days at ₹50 = 75 + 250 = 325)
+    ->     (103, '2024-10-28', 325.00),
+    ->     
+    ->     -- 45 days (15 days at ₹5 + 15 days at ₹50 = 75 + 750 = 825)
+    ->     (105, '2024-10-28', 825.00),
+    ->     
+    ->     -- 17 days (2 days late, fine: 2 * 5 = 10)
+    ->     (107, '2024-10-20', 10.00),
+    ->     
+    ->     -- 32 days (15 days at ₹5 + 2 days at ₹50 = 75 + 100 = 175)
+    ->     (109, '2024-10-28', 175.00);
+Query OK, 5 rows affected (0.02 sec)
+Records: 5  Duplicates: 0  Warnings: 0
+
+mysql> SELECT 
+    ->     F.Roll_no,
+    ->     B.Name AS Student_Name,
+    ->     B.NameofBook,
+    ->     B.DateofIssue,
+    ->     F.Date AS Return_Date,
+    ->     DATEDIFF(F.Date, B.DateofIssue) AS Days_Kept,
+    ->     F.Amt AS Fine_Amount
+    -> FROM Fine F
+    -> JOIN Borrower B ON F.Roll_no = B.Roll_no
+    -> ORDER BY F.Amt;
++---------+--------------+-------------------------+-------------+-------------+-----------+-------------+
+| Roll_no | Student_Name | NameofBook              | DateofIssue | Return_Date | Days_Kept | Fine_Amount |
++---------+--------------+-------------------------+-------------+-------------+-----------+-------------+
+|     107 | Arun Gupta   | Python Programming      | 2024-10-03  | 2024-10-20  |        17 |       10.00 |
+|     102 | Priya Patel  | Data Structures         | 2024-10-08  | 2024-10-28  |        20 |       25.00 |
+|     109 | Karthik Iyer | Artificial Intelligence | 2024-09-28  | 2024-10-28  |        30 |      175.00 |
+|     103 | Amit Kumar   | Operating Systems       | 2024-09-23  | 2024-10-28  |        35 |      325.00 |
+|     105 | Raj Malhotra | Software Engineering    | 2024-09-13  | 2024-10-28  |        45 |      825.00 |
++---------+--------------+-------------------------+-------------+-------------+-----------+-------------+
+5 rows in set (0.00 sec)
+
+mysql> CALL CalculateFine(101, 'Database Management Systems');
++------------------------------------------------+
+| An error has occurred, transaction rolled back |
++------------------------------------------------+
+| An error has occurred, transaction rolled back |
++------------------------------------------------+
+1 row in set (0.00 sec)
+
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> SELECT * FROM Fine;
++---------+------------+--------+
+| Roll_no | Date       | Amt    |
++---------+------------+--------+
+|     102 | 2024-10-28 |  25.00 |
+|     103 | 2024-10-28 | 325.00 |
+|     105 | 2024-10-28 | 825.00 |
+|     107 | 2024-10-20 |  10.00 |
+|     109 | 2024-10-28 | 175.00 |
++---------+------------+--------+
+5 rows in set (0.00 sec)
+
+mysql> SELECT b.Roll_no, b.Name, b.NameofBook, b.DateofIssue, b.Status, f.Amt as Fine_Amount
+    -> FROM Borrower b
+    -> LEFT JOIN Fine f ON b.Roll_no = f.Roll_no
+    -> WHERE b.Roll_no = 101;
++---------+--------------+-----------------------------+-------------+--------+-------------+
+| Roll_no | Name         | NameofBook                  | DateofIssue | Status | Fine_Amount |
++---------+--------------+-----------------------------+-------------+--------+-------------+
+|     101 | Rahul Sharma | Database Management Systems | 2024-10-18  | R      |        NULL |
++---------+--------------+-----------------------------+-------------+--------+-------------+
+1 row in set (0.00 sec)
+
+mysql> 
+
